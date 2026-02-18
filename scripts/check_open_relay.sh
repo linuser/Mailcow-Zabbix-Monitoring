@@ -3,7 +3,7 @@
 #  Mailcow Zabbix Monitoring - Open Relay Check
 #  Version:    1.0
 #  Vendor:     Alexander Fox | PlaNet Fox
-#  Project:    https://github.com/linuser/mailcow-monitoring
+#  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft ob mynetworks unsichere Einträge enthält (0.0.0.0/0 oder ::/0)
 #  License:    GPLv3 (see LICENSE)
 #  Created with Open Source and ♥

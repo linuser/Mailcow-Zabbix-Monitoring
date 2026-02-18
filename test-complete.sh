@@ -3,7 +3,7 @@
 #  Mailcow Zabbix Monitoring - Komplett-Test
 #  Version:    1.0
 #  Vendor:     Alexander Fox | PlaNet Fox
-#  Project:    https://github.com/linuser/mailcow-monitoring
+#  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft alle 246 UserParameters via zabbix_get
 #  License:    GPLv3 (see LICENSE)
 #  Created with Open Source and ♥

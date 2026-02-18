@@ -3,7 +3,7 @@
 #  Mailcow Zabbix Monitoring - Sync Jobs Check
 #  Version:    1.0
 #  Vendor:     Alexander Fox | PlaNet Fox
-#  Project:    https://github.com/linuser/mailcow-monitoring
+#  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Überwacht Mailcow IMAP Sync Jobs (eingebaute Migration)
 #  License:    GPLv3 (see LICENSE)
 #  Created with Open Source and ♥

@@ -3,7 +3,7 @@
 #  Mailcow Zabbix Monitoring - Security Audit Check
 #  Version:    1.0
 #  Vendor:     Alexander Fox | PlaNet Fox
-#  Project:    https://github.com/linuser/mailcow-monitoring
+#  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft DANE/TLSA, MTA-STS, TLS-RPT, BIMI für alle Domains
 #  Usage:      check_security_audit.sh [dane|mta_sts|tls_rpt|bimi|detail|score]
 #  License:    GPLv3 (see LICENSE)

@@ -3,7 +3,7 @@
 #  Mailcow Zabbix Monitoring - Postfix Log Analysis
 #  Version:    1.0
 #  Vendor:     Alexander Fox | PlaNet Fox
-#  Project:    https://github.com/linuser/mailcow-monitoring
+#  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Analysiert Postfix Logs nach SASL, Relay, TLS, Spam, Virus und Postscreen Events
 #  License:    GPLv3 (see LICENSE)
 #  Created with Open Source and ♥

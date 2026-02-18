@@ -304,6 +304,6 @@ systemctl restart zabbix-agent2
 
 **GPLv3** — Dieser Code muss Open Source bleiben. Bei Nutzung, Änderung oder Weitergabe muss der ursprüngliche Autor genannt werden.
 
-© 2026 Alexander Fox | PlaNet Fox — https://github.com/linuser
+© 2026 Alexander Fox | PlaNet Fox — https://github.com/linuser/Mailcow-Zabbix-Monitoring
 
 Created with Open Source and ❤

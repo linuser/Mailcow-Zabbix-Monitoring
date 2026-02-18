@@ -3,7 +3,7 @@
 #  Mailcow Zabbix Monitoring - TLS/SSL Certificate Check
 #  Version:    1.0
 #  Vendor:     Alexander Fox | PlaNet Fox
-#  Project:    https://github.com/linuser/mailcow-monitoring
+#  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft TLS-Zertifikate auf HTTPS/IMAPS/Submission Ports
 #  Usage:      check_tls.sh [port_check|cert_days|cert_raw] [port]
 #  License:    GPLv3 (see LICENSE)

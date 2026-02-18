@@ -1,101 +1,136 @@
-# Mailcow Monitoring v1.0 für Zabbix
+# Mailcow Monitoring v1.0 for Zabbix
 
-Vollständiges Monitoring für Mailcow-Dockerized mit Zabbix Agent 2.
+Complete monitoring solution for Mailcow-Dockerized with Zabbix Agent 2. 246 metrics, 71 triggers, 19 dashboards — secure by design, installed in 5 minutes.
 
-## Architektur
+🇩🇪 [Deutsche Version](README.de.md) | 🇩🇪 [Ausführliche Dokumentation](MAILCOW-MONITORING-DOKU.md)
+
+## Architecture
 
 ```
 systemd timer (60s) → mailcow-collector.py (root)
   → /var/tmp/mailcow-monitor.json (chmod 644)
-    → Zabbix Agent 2 (zabbix user) → mailcow-reader.sh → liest JSON
+    → Zabbix Agent 2 (zabbix user) → mailcow-reader.sh → reads JSON
 ```
 
-- **Collector** läuft als root (braucht Docker-Zugriff)
-- **Zabbix Agent** liest nur JSON — kein Docker, kein sudo, kein UnsafeUserParameters
-- **246 UserParameters**, 303 Template Items, 71 Trigger, 19 Dashboards, 22 Module
+The collector runs as root (needs Docker/MySQL access) and writes metrics to a world-readable JSON file. The Zabbix Agent only reads that file — no Docker access, no sudo, no UnsafeUserParameters required.
 
-## Voraussetzungen
+## What's Monitored
 
-- Mailcow-Dockerized (laufend)
-- Zabbix Agent 2
+| Module | Metrics | Description |
+|--------|---------|-------------|
+| Postfix | 16 | Queue, connections, deferred/bounced, SASL failures |
+| Postfix Logs | 11 | Relay denied, RBL rejects, TLS errors, quota warnings |
+| Postscreen | 9 | Pass/reject/DNSBL/pregreet (auto-detected) |
+| Dovecot | 10 | Connections, login failures, IMAP disconnects |
+| Rspamd | 14 | Spam/ham ratio, reject rate, greylist, actions |
+| Rspamd Bayes | 5 | Training status: untrained → low → good → excellent |
+| Security | 13 | Fail2ban, RBL blacklist, DNS records, open relay |
+| Security Audit | 6 | DANE/TLSA, MTA-STS, TLS-RPT, BIMI — score 0-7 |
+| Disk | 15 | Root, Docker, vmail, log partitions |
+| Mailboxes & Domains | 10 | Quota usage, top 5 mailboxes |
+| Mailflow | 28 | Received/delivered/bounced + anomaly detection |
+| ClamAV | 8 | Signature age, DB version, scan status |
+| Watchdog | 18 | Health status for all 15 Mailcow services |
+| Docker | 7+LLD | CPU, RAM, restarts per container |
+| TLS/Certificates | 10 | HTTPS, IMAPS, Submission — days until expiry |
+| Backup | 9 | Age, size, count, missing backups |
+| + 6 more | ... | SOGo, Quarantine, Queue Age, Sync Jobs, Updates, Aliases |
+
+**Total: 246 UserParameters · 303 template items · 71 triggers · 19 dashboards**
+
+## Key Features
+
+### Anomaly Detection
+Instead of fixed thresholds, 5 baseline triggers use `trendavg()` to learn what's normal over a week and alert on deviations:
+
+| Metric | Spike | Drop |
+|--------|-------|------|
+| Received | >5× weekly avg | <20% weekly avg |
+| Rejected | >10× weekly avg | — |
+| Bounced | >5× weekly avg | — |
+| Deferred | >5× weekly avg | — |
+
+### Security Audit Score (0-7)
+Checks SPF, DKIM, DMARC plus DANE/TLSA, MTA-STS, TLS-RPT and BIMI. Trigger alerts when score drops below 3.
+
+### Low-Level Discovery
+4 LLD rules automatically discover and monitor all domains, mailboxes, sync jobs and Docker containers individually.
+
+## Requirements
+
+- Mailcow-Dockerized (running)
+- Zabbix Server + Zabbix Agent 2
+- Zabbix 7.0
 - Python 3, git, dig (dnsutils), openssl, netcat
+- pflogsumm (`apt install pflogsumm`)
 
 ## Installation
 
 ```bash
-unzip mailcow-monitoring-v1.0.zip
-cd mailcow-monitoring-v1.0
+git clone https://github.com/linuser/Mailcow-Zabbix-Monitoring.git
+cd Mailcow-Zabbix-Monitoring
 sudo ./install.sh
 ```
 
-Nach der Installation:
-1. Template importieren: `templates/mailcow-complete-monitoring.yaml`
-2. In Zabbix: Data collection → Templates → Import (☑ Update existing)
-3. Host zuweisen: "Mailcow Complete Monitoring v1.0"
-4. 5–10 Min warten, dann Dashboard prüfen
+Then in Zabbix:
+1. **Data collection → Templates → Import** → select `templates/mailcow-complete-monitoring.yaml`
+2. **Link template** to your Mailcow host: "Mailcow Complete Monitoring v1.0"
+3. Wait 5–10 minutes for dashboards to populate
 
-## Test
+### Verify
 
 ```bash
 sudo ./test-complete.sh
 ```
 
-## Paketstruktur
+### Force Immediate Data
+
+```bash
+systemctl start mailcow-monitor.service    # fresh JSON
+systemctl restart zabbix-agent2             # force re-check
+```
+
+## File Structure
 
 ```
-mailcow-monitoring-v1.0/
+mailcow-monitoring/
 ├── install.sh                        # Installer
-├── uninstall.sh                      # Deinstallation
+├── uninstall.sh                      # Uninstaller
 ├── mailcow-zabbix.conf               # 246 UserParameters
-├── test-complete.sh                  # Komplett-Test (246 Keys)
+├── test-complete.sh                  # Validation script (246 keys)
 ├── templates/
-│   └── mailcow-complete-monitoring.yaml  # Zabbix 7.0 Template
+│   └── mailcow-complete-monitoring.yaml  # Zabbix 7.0 template
 ├── scripts/
-│   ├── mailcow-collector.py          # Haupt-Collector (22 Module)
-│   ├── mailcow-reader.sh             # JSON Reader
+│   ├── mailcow-collector.py          # Main collector (22 modules)
+│   ├── mailcow-reader.sh             # JSON reader
 │   ├── check_dns.sh                  # DNS (SPF/DKIM/DMARC)
-│   ├── check_tls.sh                  # TLS/Zertifikate
-│   ├── check_rbl.sh                  # Blacklist-Check
-│   ├── check_ptr.sh                  # PTR-Record
-│   ├── check_open_relay.sh           # Open-Relay-Check
+│   ├── check_tls.sh                  # TLS/certificate checks
+│   ├── check_rbl.sh                  # RBL blacklist check
+│   ├── check_ptr.sh                  # PTR record check
+│   ├── check_open_relay.sh           # Open relay check
 │   ├── check_security_audit.sh       # DANE/MTA-STS/TLS-RPT/BIMI
-│   ├── dovecot_check.sh              # Dovecot Stats
-│   ├── sync_jobs_check.sh            # Sync Jobs
-│   ├── postfix_stats_docker.sh       # Postfix Stats
-│   └── postfix_log_analysis.sh       # Postfix Logs + Postscreen
+│   ├── dovecot_check.sh              # Dovecot stats
+│   ├── sync_jobs_check.sh            # IMAP sync jobs
+│   ├── postfix_stats_docker.sh       # Postfix queue stats
+│   └── postfix_log_analysis.sh       # Postfix logs + Postscreen
 ├── mailcow-monitor.service           # systemd oneshot
 ├── mailcow-monitor.timer             # systemd timer (60s)
 ├── LICENSE                           # GPLv3
-├── MAILCOW-MONITORING-DOKU.md        # Ausführliche Dokumentation
 ├── CHANGELOG.md
-└── README.md
+├── MAILCOW-MONITORING-DOKU.md        # Detailed docs (German)
+├── README.md                         # This file
+└── README.de.md                      # German README
 ```
 
-## 22 Collector-Module
-
-Postfix, Dovecot, Rspamd, Fail2ban/Security, Disk, Sync Jobs, Mailbox & Domain,
-Alias, Mailflow (pflogsumm), ClamAV, Watchdog, ACME/Cert, Docker Health,
-SOGo/Memcached, Quarantine, Queue Age, LLD Master, TLS/SSL, Updates/Version,
-Backup, Agent/Meta, Collector
-
-## 4 LLD Discovery Rules
-
-- Domain Discovery (Quota, Mailbox-Count pro Domain)
-- Mailbox Discovery (Quota, Größe pro Mailbox)
-- Syncjob Discovery (Status, Letzte Ausführung pro Job)
-- Docker Discovery (CPU, RAM, Status pro Container)
-
-## Deinstallation
+## Uninstall
 
 ```bash
 sudo ./uninstall.sh
 ```
 
-## Lizenz
+## License
 
-GPLv3 — der Code muss Open Source bleiben und der Autor muss genannt werden.
-Siehe [LICENSE](LICENSE) für Details.
+GPLv3 — code must remain open source and the original author must be credited.
+See [LICENSE](LICENSE) for details.
 
 **© 2026 Alexander Fox | PlaNet Fox** — Created with Open Source and ❤
-
-https://github.com/linuser

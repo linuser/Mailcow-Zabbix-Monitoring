@@ -3,7 +3,7 @@
 #  Mailcow Zabbix Monitoring - DNS Record Check
 #  Version:    1.0
 #  Vendor:     Alexander Fox | PlaNet Fox
-#  Project:    https://github.com/linuser/mailcow-monitoring
+#  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft SPF/DKIM/DMARC für alle aktiven Mail-Domains
 #  Usage:      check_dns.sh [spf|dkim|dmarc|detail|domains]
 #  License:    GPLv3 (see LICENSE)

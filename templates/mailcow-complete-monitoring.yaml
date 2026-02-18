@@ -18,7 +18,7 @@ zabbix_export:
       4 LLD Discovery Rules (Domains, Mailboxen, Sync Jobs, Docker Container).
       
       Vendor:  Alexander Fox | PlaNet Fox
-      Project: https://github.com/linuser/mailcow-monitoring
+      Project: https://github.com/linuser/Mailcow-Zabbix-Monitoring
       Created with Open Source and ♥
     groups:
     - name: Templates/Mailcow

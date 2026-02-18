@@ -3,7 +3,7 @@
 #  Mailcow Zabbix Monitoring - Collector
 #  Version:    1.0
 #  Vendor:     Alexander Fox | PlaNet Fox
-#  Project:    https://github.com/linuser/mailcow-monitoring
+#  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Sammelt 246 Metriken aus 22 Modulen (Docker, MySQL, DNS,
 #               TLS, Rspamd, ClamAV, Postscreen, Bayes u.v.m.) in JSON
 #  License:    GPLv3 (see LICENSE)
