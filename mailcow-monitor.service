@@ -1,0 +1,11 @@
+[Unit]
+Description=Mailcow Monitoring Collector
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/bin/mailcow-collector.py
+User=root
+Nice=10
+TimeoutStartSec=120
