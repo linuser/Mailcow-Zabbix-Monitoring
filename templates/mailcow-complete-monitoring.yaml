@@ -3436,8 +3436,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 35f7a9809f59402581ec09a1f0a238ee
-        expression: change(/Mailcow Complete Monitoring v1.0/mailcow.sogo.memcached.evictions)>0
-        name: 'Mailcow: SOGo Memcached evictions detected on {{HOST.NAME}}'
+        expression: min(/Mailcow Complete Monitoring v1.0/mailcow.sogo.memcached.evictions,1h)>0 and change(/Mailcow Complete Monitoring v1.0/mailcow.sogo.memcached.evictions)>50
+        name: 'Mailcow: SOGo Memcached cache pressure on {{HOST.NAME}} (>50 evictions/5m)'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 6fc714ab45e7487a869a0591d36fe75a
