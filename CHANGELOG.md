@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1 (2026-03-28)
+
+### Bugfix
+- **Netfilter/Fail2ban:** Mailcow ab Version 2025-03 hat fail2ban durch eine eigene Python-Lösung ersetzt. `fail2ban-client` existiert nicht mehr im netfilter-Container und erzeugte alle 5 Minuten Fehlermeldungen im Docker-Log. Der Collector erkennt jetzt automatisch welche Version läuft:
+  - **Neue Methode:** Gesamt-Bans über iptables/nftables MAILCOW-Chain
+  - **Alte Methode:** fail2ban-client für Pro-Service-Bans (nur wenn vorhanden)
+  - Kompatibel mit alten und neuen Mailcow-Versionen
+
 ## v1.0 (2026-02-18) — First Public Release
 
 ### Architektur

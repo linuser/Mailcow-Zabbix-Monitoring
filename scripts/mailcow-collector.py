@@ -364,7 +364,14 @@ def collect_rspamd(container):
 
 
 def collect_fail2ban(container):
-    """Fail2ban/Netfilter-Metriken sammeln."""
+    """Fail2ban/Netfilter-Metriken sammeln.
+
+    Mailcow hat ab Version 2025-03 fail2ban durch eine eigene Python-Lösung
+    im netfilter-Container ersetzt. fail2ban-client existiert dort nicht mehr.
+    Diese Funktion erkennt automatisch welche Version läuft und nutzt:
+    - Neue Methode: iptables/nft MAILCOW-Chain für Gesamt-Bans
+    - Alte Methode: fail2ban-client für Pro-Service-Bans (falls vorhanden)
+    """
     data = {
         "mailcow.security.fail2ban.banned": 0,
         "mailcow.security.fail2ban.postfix": 0,
@@ -374,19 +381,28 @@ def collect_fail2ban(container):
     if not container:
         return data
 
-    # Gesamt-Bans aus iptables
+    # Gesamt-Bans: iptables MAILCOW-Chain (funktioniert mit alter + neuer Version)
     ipt = docker_exec(container, "iptables -L MAILCOW -n 2>/dev/null")
-    data["mailcow.security.fail2ban.banned"] = len([l for l in ipt.splitlines() if "DROP" in l])
+    banned = len([l for l in ipt.splitlines() if "DROP" in l])
 
-    # Pro-Service Bans
-    for service, key in [("postfix-sasl", "postfix"), ("dovecot", "dovecot"), ("sogo-auth", "sogo")]:
-        out = docker_exec(container, f"fail2ban-client status {service} 2>/dev/null")
-        for line in out.splitlines():
-            if "Currently banned" in line:
-                match = re.search(r"(\d+)", line)
-                if match:
-                    data[f"mailcow.security.fail2ban.{key}"] = int(match.group(1))
-                break
+    # Fallback: nftables (neuere Mailcow-Versionen nutzen NFTables backend)
+    if banned == 0 and not ipt.strip():
+        nft = docker_exec(container, "nft list chain ip filter MAILCOW 2>/dev/null")
+        banned = len([l for l in nft.splitlines() if "drop" in l.lower()])
+
+    data["mailcow.security.fail2ban.banned"] = banned
+
+    # Pro-Service Bans: nur wenn fail2ban-client vorhanden (alte Mailcow-Versionen)
+    has_f2b = docker_exec(container, "which fail2ban-client 2>/dev/null")
+    if has_f2b:
+        for service, key in [("postfix-sasl", "postfix"), ("dovecot", "dovecot"), ("sogo-auth", "sogo")]:
+            out = docker_exec(container, f"fail2ban-client status {service} 2>/dev/null")
+            for line in out.splitlines():
+                if "Currently banned" in line:
+                    match = re.search(r"(\d+)", line)
+                    if match:
+                        data[f"mailcow.security.fail2ban.{key}"] = int(match.group(1))
+                    break
 
     return data
 

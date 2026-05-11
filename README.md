@@ -61,14 +61,35 @@ Checks SPF, DKIM, DMARC plus DANE/TLSA, MTA-STS, TLS-RPT and BIMI. Trigger alert
 - Mailcow-Dockerized (running)
 - Zabbix Server + Zabbix Agent 2
 - Zabbix 7.0
+- zabbix-get (`apt install zabbix-get` — needed for test script validation)
 - Python 3, git, dig (dnsutils), openssl, netcat
 - pflogsumm (`apt install pflogsumm`)
 
+### Zabbix Agent Configuration
+
+Make sure your Zabbix Agent 2 config (`/etc/zabbix/zabbix_agent2.conf`) allows local queries:
+
+```
+Server=127.0.0.1,<your-zabbix-server-ip>
+```
+
+Without `127.0.0.1`, the test script (`test-complete.sh`) and `zabbix_get -s 127.0.0.1` won't work.
+
 ## Installation
+
+The installer uses two variables that you may need to adjust at the top of `install.sh`:
+
+```bash
+MAILCOW_DIR="/opt/mailcow-dockerized"   # Path to your Mailcow installation
+BACKUP_PATH="/opt/backup"                # Path to your Mailcow backup directory
+```
+
+If your Mailcow is installed elsewhere or your backups are in a different location, edit these before running the installer.
 
 ```bash
 git clone https://github.com/linuser/Mailcow-Zabbix-Monitoring.git
 cd Mailcow-Zabbix-Monitoring
+# Optional: edit MAILCOW_DIR and BACKUP_PATH in install.sh
 sudo ./install.sh
 ```
 

@@ -17,14 +17,35 @@ systemd timer (60s) → mailcow-collector.py (root)
 ## Voraussetzungen
 
 - Mailcow-Dockerized (laufend)
-- Zabbix Agent 2
+- Zabbix Server + Zabbix Agent 2
+- Zabbix 7.0
+- zabbix-get (`apt install zabbix-get` — für Test-Script)
 - Python 3, git, dig (dnsutils), openssl, netcat
+- pflogsumm (`apt install pflogsumm`)
+
+### Zabbix Agent Konfiguration
+
+In der Zabbix Agent 2 Konfiguration (`/etc/zabbix/zabbix_agent2.conf`) muss `127.0.0.1` als Server eingetragen sein:
+
+```
+Server=127.0.0.1,<dein-zabbix-server-ip>
+```
+
+Ohne `127.0.0.1` funktioniert das Test-Script (`test-complete.sh`) und `zabbix_get -s 127.0.0.1` nicht.
 
 ## Installation
+
+Der Installer nutzt zwei Variablen die ggf. angepasst werden müssen (am Anfang von `install.sh`):
+
+```bash
+MAILCOW_DIR="/opt/mailcow-dockerized"   # Pfad zur Mailcow-Installation
+BACKUP_PATH="/opt/backup"                # Pfad zum Backup-Verzeichnis
+```
 
 ```bash
 unzip mailcow-monitoring-v1.0.zip
 cd mailcow-monitoring-v1.0
+# Optional: MAILCOW_DIR und BACKUP_PATH in install.sh anpassen
 sudo ./install.sh
 ```
 
