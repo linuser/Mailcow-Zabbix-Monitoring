@@ -65,7 +65,7 @@ DOMAINS=$(get_domains)
 if [ -z "$DOMAINS" ]; then
     # Fallback: try hostname domain
     HOSTNAME_DOMAIN=$(grep -oP "^MAILCOW_HOSTNAME=\K[a-zA-Z0-9._-]+" "$MAILCOW_DIR/mailcow.conf" 2>/dev/null)
-    # Extract base domain (cow.fox1.de -> fox1.de)
+    # Extract base domain (mail.example.com -> example.com)
     DOMAINS=$(echo "$HOSTNAME_DOMAIN" | sed 's/^[^.]*\.//')
 fi
 

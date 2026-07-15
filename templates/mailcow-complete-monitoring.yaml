@@ -10,16 +10,24 @@ zabbix_export:
     vendor:
       name: Alexander Fox | PlaNet Fox
       version: '1.0'
-    description: |
-      Vollständiges Mailcow-Dockerized Monitoring (246 Metriken, 71 Trigger, 19 Dashboards).
+    description: 'Vollständiges Mailcow-Dockerized Monitoring (246 Metriken, 71 Trigger, 19 Dashboards).
+
       Postfix, Dovecot, Rspamd (inkl. Bayes-Training), ClamAV, Docker Health, TLS/Zertifikate,
+
       DNS (SPF/DKIM/DMARC), Security Audit (DANE/MTA-STS/TLS-RPT/BIMI), Postscreen,
+
       Mailflow mit Anomalie-Erkennung (Baseline-Trigger), Backup, Quarantine, SOGo u.v.m.
+
       4 LLD Discovery Rules (Domains, Mailboxen, Sync Jobs, Docker Container).
-      
+
+
       Vendor:  Alexander Fox | PlaNet Fox
+
       Project: https://github.com/linuser/Mailcow-Zabbix-Monitoring
+
       Created with Open Source and ♥
+
+      '
     groups:
     - name: Templates/Mailcow
     items:
@@ -40,8 +48,8 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: 620ed6bcee2147ad87dc437239089428
-        expression: last(/Mailcow Complete Monitoring v1.0/postfix.process.running)=0
-        name: 'Mailcow: Postfix not running on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/postfix.process.running)=0
+        name: 'Mailcow: Postfix not running on {HOST.NAME}'
         priority: DISASTER
         manual_close: 'YES'
     - uuid: b8c2d683081f418c830545da392e91a1
@@ -59,8 +67,9 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 22dce308b2da45488078e2d225216f4b
-        expression: min(/Mailcow Complete Monitoring v1.0/postfix.pfmailq,5m)>50
-        name: 'Mailcow: Mail queue too large on {{HOST.NAME}}'
+        expression: min(/mailcow_complete_monitoring_v45/postfix.pfmailq,5m)>50
+        name: 'Mailcow: Mail queue too large on {HOST.NAME}'
+        recovery_expression: max(/mailcow_complete_monitoring_v45/postfix.pfmailq,5m)<30
         priority: HIGH
         manual_close: 'YES'
         description: Mail queue has >50 messages for 5 minutes
@@ -109,7 +118,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.container.version.postfix
       delay: 12h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -132,8 +141,8 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 27b7073fb5ae4b6d83df608c510406da
-        expression: sum(/Mailcow Complete Monitoring v1.0/postfix.log.errors,1h)>10
-        name: 'Mailcow: Postfix errors detected on {{HOST.NAME}}'
+        expression: sum(/mailcow_complete_monitoring_v45/postfix.log.errors,1h)>10
+        name: 'Mailcow: Postfix errors detected on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: ffbbf05161ae4cf28e85068e33a89ba5
@@ -279,7 +288,7 @@ zabbix_export:
       - tag: application
         value: mailcow
       trends: 90d
-      description: '1 wenn Postscreen aktiviert ist und Logeinträge vorhanden, 0 wenn nicht'
+      description: 1 wenn Postscreen aktiviert ist und Logeinträge vorhanden, 0 wenn nicht
     - uuid: a0f0bdf1080d4bae9b3d98467d7ca007
       name: 'Mailcow: Postscreen connections'
       type: ZABBIX_ACTIVE
@@ -337,8 +346,8 @@ zabbix_export:
       description: Von Postscreen abgelehnte Verbindungen
       triggers:
       - uuid: 23af2313c2e941c9b55730fed5ff9cec
-        expression: last(/Mailcow Complete Monitoring v1.0/postfix.postscreen.reject)>100
-        name: 'Mailcow: Postscreen rejecting heavily ({ITEM.VALUE}) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/postfix.postscreen.reject)>100
+        name: 'Mailcow: Postscreen rejecting heavily ({ITEM.VALUE}) on {HOST.NAME}'
         priority: WARNING
         description: Mehr als 100 Postscreen-Rejects in 5 Minuten — möglicher Angriff
         manual_close: 'YES'
@@ -369,7 +378,7 @@ zabbix_export:
       - tag: application
         value: mailcow
       trends: 365d
-      description: 'Clients die vor dem Server-Greeting sprachen (typisches Bot-Verhalten)'
+      description: Clients die vor dem Server-Greeting sprachen (typisches Bot-Verhalten)
     - uuid: 33bc38ec90f7423da130a96134206518
       name: 'Mailcow: Postscreen HANGUP'
       type: ZABBIX_ACTIVE
@@ -414,8 +423,8 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: 5c86d0e8aaf941dc880b76ed0340892f
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.tls.https.check)=0
-        name: 'Mailcow: HTTPS not reachable on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.https.check)=0
+        name: 'Mailcow: HTTPS not reachable on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: 9417603b794e43e3804419bb5cc892b7
@@ -435,8 +444,8 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: e777234570e74d4b8832dca84073f439
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.tls.submission.check)=0
-        name: 'Mailcow: SMTP submission not reachable on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.submission.check)=0
+        name: 'Mailcow: SMTP submission not reachable on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: 8f89f4c6443147e5877c73570f52a2cd
@@ -456,8 +465,8 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: 3b5cc9d346274ce88a32b9579dafc74f
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.tls.imaps.check)=0
-        name: 'Mailcow: IMAPS not reachable on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.imaps.check)=0
+        name: 'Mailcow: IMAPS not reachable on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: 375b6cf1df7e40f982086336bfef2715
@@ -477,8 +486,8 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: 48030a12075b48a288ed825ce69a08a0
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.ui.check)=0
-        name: 'Mailcow: Web UI not accessible on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.ui.check)=0
+        name: 'Mailcow: Web UI not accessible on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: 30061fab065f40ed827784e216c85217
@@ -496,8 +505,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 91c96995900040a686f6b3d6979d2b68
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.tls.cert.days.443)<14
-        name: 'Mailcow: TLS cert expires in {{ITEM.VALUE}} days (443) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.cert.days.443)<14
+        name: 'Mailcow: TLS cert expires in {ITEM.VALUE} days (443) on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: 9b1486ed4b724e0f8176c877727b5ab3
@@ -580,8 +589,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 57372933d4cd4dd88ce39f5d481c03e2
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.security.fail2ban.banned)>20
-        name: 'Mailcow: High number of banned IPs ({{ITEM.VALUE}}) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.security.fail2ban.banned)>20
+        name: 'Mailcow: High number of banned IPs ({ITEM.VALUE}) on {HOST.NAME}'
+        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.security.fail2ban.banned)<10
         priority: WARNING
         manual_close: 'YES'
     - uuid: abcebbfe9c7f49008be93fc3af839f03
@@ -638,8 +648,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 6e43aecadbf5478286fcec82efb716bc
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.security.rbl.listed)>0
-        name: 'Mailcow: IP on {ITEM.VALUE} RBL list(s): {?last(/Mailcow Complete Monitoring v1.0/mailcow.security.rbl.detail)} on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.security.rbl.listed)>0
+        name: 'Mailcow: IP on {ITEM.VALUE} RBL list(s): {?last(/mailcow_complete_monitoring_v45/mailcow.security.rbl.detail)} on {HOST.NAME}'
         priority: DISASTER
         manual_close: 'YES'
         description: 'Mail server IP is listed on RBL blacklist(s)! Check: mxtoolbox.com/blacklists'
@@ -672,8 +682,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 00ae22db91794cf98b74cab77dfb3dc6
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.security.open.relay)=1
-        name: 'Mailcow: OPEN RELAY DETECTED on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.security.open.relay)=1
+        name: 'Mailcow: OPEN RELAY DETECTED on {HOST.NAME}'
         priority: DISASTER
         manual_close: 'YES'
     - uuid: 3a7883c799d445328f151c2be252113b
@@ -689,7 +699,7 @@ zabbix_export:
       - tag: application
         value: mailcow
       trends: 365d
-      description: 'DANE/TLSA record for MX hostname (proves TLS cert matches DNS)'
+      description: DANE/TLSA record for MX hostname (proves TLS cert matches DNS)
       valuemap:
         name: Mailcow Boolean
     - uuid: ba167ffa4f014eb3af89b41b1350e687
@@ -705,7 +715,7 @@ zabbix_export:
       - tag: application
         value: mailcow
       trends: 365d
-      description: 'MTA-STS policy (enforces TLS for inbound mail, like HSTS for SMTP)'
+      description: MTA-STS policy (enforces TLS for inbound mail, like HSTS for SMTP)
       valuemap:
         name: Mailcow Boolean
     - uuid: 1f4bf2e4707d4727923ce444c692c5d2
@@ -721,7 +731,7 @@ zabbix_export:
       - tag: application
         value: mailcow
       trends: 365d
-      description: 'TLS-RPT (receives reports about TLS failures on inbound connections)'
+      description: TLS-RPT (receives reports about TLS failures on inbound connections)
       valuemap:
         name: Mailcow Boolean
     - uuid: ad5c37eb512e46a9b6fcafbe1ad065b1
@@ -737,7 +747,7 @@ zabbix_export:
       - tag: application
         value: mailcow
       trends: 365d
-      description: 'BIMI (Brand logo in email clients, requires DMARC p=quarantine/reject)'
+      description: BIMI (Brand logo in email clients, requires DMARC p=quarantine/reject)
       valuemap:
         name: Mailcow Boolean
     - uuid: 3ff81b063fd44a99814ce4537f795fd0
@@ -756,24 +766,24 @@ zabbix_export:
       description: 'Score 0-7: SPF+DKIM+DMARC+DANE+MTA-STS+TLS-RPT+BIMI'
       triggers:
       - uuid: 6ecfa026caa74c90958dcc5c1d6e2d90
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.security.audit.score)<3
-        name: 'Mailcow: Security audit score critically low ({ITEM.VALUE}/7) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.security.audit.score)<3
+        name: 'Mailcow: Security audit score critically low ({ITEM.VALUE}/7) on {HOST.NAME}'
         priority: HIGH
-        description: 'Less than 3/7 mail security standards configured (SPF+DKIM+DMARC+DANE+MTA-STS+TLS-RPT+BIMI)'
+        description: Less than 3/7 mail security standards configured (SPF+DKIM+DMARC+DANE+MTA-STS+TLS-RPT+BIMI)
         manual_close: 'YES'
     - uuid: f7b59cc3d27e4f45a26168ac2bc87d2a
       name: 'Mailcow: Security audit details'
       type: ZABBIX_ACTIVE
       key: mailcow.security.audit.detail
       delay: 6h
-      history: 30d
+      history: 7d
       value_type: TEXT
       tags:
       - tag: component
         value: security
       - tag: application
         value: mailcow
-      description: 'Details of missing security records per domain'
+      description: Details of missing security records per domain
     - uuid: 005644d1f4fe4ca382578d34606de669
       name: 'Mailcow: SPF record exists'
       type: ZABBIX_ACTIVE
@@ -792,7 +802,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: c1575188d4a246ed898d13f51e05eac4
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.dns.spf.exists)=0
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.spf.exists)=0
         name: 'Mailcow: SPF record missing for one or more domains on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
@@ -814,7 +824,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: 02e855300eaf40f282cff5c28d4f29a1
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.dns.dkim.exists)=0
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.dkim.exists)=0
         name: 'Mailcow: DKIM record missing for one or more domains on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
@@ -836,7 +846,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: 8a4d9f32ed4d42c28c2d4ac5fd12493c
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.dns.dmarc.exists)=0
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.dmarc.exists)=0
         name: 'Mailcow: DMARC record missing for one or more domains on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
@@ -857,8 +867,8 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: be366ad7a14443788eeb312c20016e20
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.dns.ptr.valid)=0
-        name: 'Mailcow: PTR record invalid on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.ptr.valid)=0
+        name: 'Mailcow: PTR record invalid on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: 60150889bf5942618e08b1d512620f11
@@ -930,8 +940,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 4b5bea9e48564a3a83946b664b879c08
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.disk.root.used)>90
-        name: 'Mailcow: Root disk >90% on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.root.used)>90
+        name: 'Mailcow: Root disk >90% on {HOST.NAME}'
+        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.root.used)<85
         priority: HIGH
         manual_close: 'YES'
     - uuid: 38640df1d4df466487aa8ea38f63ceac
@@ -975,8 +986,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 3a460af09c7d47de89d99269584e6450
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.disk.docker.used)>90
-        name: 'Mailcow: Docker disk >90% on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.docker.used)>90
+        name: 'Mailcow: Docker disk >90% on {HOST.NAME}'
+        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.docker.used)<85
         priority: HIGH
         manual_close: 'YES'
     - uuid: ffd793c1ecda489986f81c5c289536b5
@@ -1020,8 +1032,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 5d20c9017f5b43358c71158acf5ae1f7
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.disk.log.used)>90
-        name: 'Mailcow: Log disk >90% on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.log.used)>90
+        name: 'Mailcow: Log disk >90% on {HOST.NAME}'
+        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.log.used)<85
         priority: WARNING
         manual_close: 'YES'
     - uuid: 149f8ce099ad4a6d8ca21dfe7426c2b6
@@ -1093,8 +1106,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 3b628bf186d54caf88fc693148eee6c2
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.disk.vmail.used)>85
-        name: 'Mailcow: vmail disk >85% on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.vmail.used)>85
+        name: 'Mailcow: vmail disk >85% on {HOST.NAME}'
+        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.vmail.used)<80
         priority: HIGH
         manual_close: 'YES'
     - uuid: c5ca7de474c6405584508d8344116831
@@ -1115,7 +1129,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.version.current
       delay: 1h
-      history: 90d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1128,7 +1142,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.version.branch
       delay: 6h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1141,7 +1155,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.version.commit
       delay: 6h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1154,7 +1168,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.version.date
       delay: 12h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1167,7 +1181,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.version.latest
       delay: 12h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1192,8 +1206,8 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: ba561045e51144f980528a568a671266
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.updates.available)=1
-        name: 'Mailcow: Update available on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.updates.available)=1
+        name: 'Mailcow: Update available on {HOST.NAME}'
         priority: INFO
         manual_close: 'YES'
     - uuid: ddb18d99e2d145638b5aea15a2583ce8
@@ -1211,8 +1225,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: c18ad202158247c18835b9822a904bb0
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.updates.commits.behind)>20
-        name: 'Mailcow: {{ITEM.VALUE}} commits behind on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.updates.commits.behind)>20
+        name: 'Mailcow: {ITEM.VALUE} commits behind on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 89a27b4b37cc43518119da577ba265c9
@@ -1235,7 +1249,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.config.hostname
       delay: 12h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1248,7 +1262,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.config.timezone
       delay: 12h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1261,7 +1275,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.container.version.dovecot
       delay: 12h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1286,8 +1300,8 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: 795f4b2ed82f4c918124192a781d6ef7
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.rspamd.running)=0
-        name: 'Mailcow: Rspamd not running on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.rspamd.running)=0
+        name: 'Mailcow: Rspamd not running on {HOST.NAME}'
         priority: DISASTER
         manual_close: 'YES'
     - uuid: b6ab99f0a671463a8e6f4a1e4c8f0dc4
@@ -1412,7 +1426,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.rspamd.version
       delay: 12h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1437,8 +1451,8 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: 133060ef38eb411286c11b36e560c062
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.dovecot.running)=0
-        name: 'Mailcow: Dovecot not running on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.dovecot.running)=0
+        name: 'Mailcow: Dovecot not running on {HOST.NAME}'
         priority: DISASTER
         manual_close: 'YES'
     - uuid: 5a4b13ba722d492284cffecbd65b9e2d
@@ -1446,7 +1460,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.dovecot.version
       delay: 1h
-      history: 30d
+      history: 7d
       value_type: TEXT
       tags:
       - tag: component
@@ -1521,8 +1535,8 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: f048f61386ae4b8e8420665890bb60ba
-        expression: sum(/Mailcow Complete Monitoring v1.0/mailcow.dovecot.imap.errors,1h)>10
-        name: 'Mailcow: Dovecot IMAP errors on {{HOST.NAME}}'
+        expression: sum(/mailcow_complete_monitoring_v45/mailcow.dovecot.imap.errors,1h)>10
+        name: 'Mailcow: Dovecot IMAP errors on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: a5a6b427bb084dee892529be4a3fed53
@@ -1566,8 +1580,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 8eef9ebbfcd741388c8fa7c7c0dd1808
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.backup.age)>48
-        name: 'Mailcow: Backup older than 48h on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.age)>48
+        name: 'Mailcow: Backup older than 48h on {HOST.NAME}'
+        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.age)<24
         priority: HIGH
         manual_close: 'YES'
     - uuid: c80bc00051b546708048009e0cbc6065
@@ -1611,8 +1626,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 3347ca2e44ad45ec8197fc1fc9fcedf9
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.backup.disk.free)<10
-        name: 'Mailcow: Backup disk low (<10% free) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.disk.free)<10
+        name: 'Mailcow: Backup disk low (<10% free) on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: aa6863d1070042de85c7f8b5546524d1
@@ -1632,8 +1647,8 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: a5621bc4a1d743c08ba22fca34e17c7f
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.backup.dir.exists)=0
-        name: 'Mailcow: Backup directory missing on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.dir.exists)=0
+        name: 'Mailcow: Backup directory missing on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: cab0e1846eb641c98f830dcfd5005e67
@@ -1641,7 +1656,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.backup.last.timestamp
       delay: 1h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1668,8 +1683,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 501d57d5d2594bdb8bb3e868e2e8e4e2
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.backup.zero.files)>0
-        name: 'Mailcow: Backup contains empty files on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.zero.files)>0
+        name: 'Mailcow: Backup contains empty files on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 4b4f13a676d849adaba567a326529da2
@@ -1685,7 +1700,7 @@ zabbix_export:
       - tag: application
         value: mailcow
       trends: 365d
-      description: '1 wenn backup_and_restore.sh vorhanden, 0 wenn nicht'
+      description: 1 wenn backup_and_restore.sh vorhanden, 0 wenn nicht
     - uuid: 2c084049828e496f878d4ed8ed186f2c
       name: 'Mailcow: Sync jobs active'
       type: ZABBIX_ACTIVE
@@ -1727,8 +1742,8 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: bcc980302d96486687c0a86438bfa928
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.sync.jobs.failed)>0
-        name: 'Mailcow: Sync jobs failed on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.failed)>0
+        name: 'Mailcow: Sync jobs failed on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: edd6d5055ed64f3a826c524c0195dafd
@@ -1746,8 +1761,8 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: fae389f1dafc4a1985165a00e85cdf3b
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.sync.jobs.never_run)>0
-        name: 'Mailcow: Sync jobs never executed on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.never_run)>0
+        name: 'Mailcow: Sync jobs never executed on {HOST.NAME}'
         priority: INFO
         manual_close: 'YES'
     - uuid: 077879f6048f4b1d8c62c3b36645a339
@@ -1765,8 +1780,8 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 6a4e18f1d3bc49a883aebbc90d42956e
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.sync.jobs.oldest_run)>48
-        name: 'Mailcow: Sync job not run for >48h on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.oldest_run)>48
+        name: 'Mailcow: Sync job not run for >48h on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: f52386b062604013831b3f859601ac57
@@ -1784,8 +1799,8 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 8cd85d61cb404bbc8abdc385a8525470
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.sync.jobs.stuck)>0
-        name: 'Mailcow: Sync job stuck on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.stuck)>0
+        name: 'Mailcow: Sync job stuck on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: e01e45d060fe4506840110c0e971d7b4
@@ -1842,8 +1857,8 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 2e75007d25724b8181cc67a50dd55026
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.mailbox.over.quota)>0
-        name: 'Mailcow: {{ITEM.VALUE}} mailbox(es) over 80% quota on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.over.quota)>0
+        name: 'Mailcow: {ITEM.VALUE} mailbox(es) over 80% quota on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 8b6b30ee039040438e922bf73d68ba95
@@ -1918,7 +1933,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.domain.list
       delay: 1h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -1942,17 +1957,17 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: e29030541ca640c1b86c1a95c118800a
-        expression: 'last(/Mailcow Complete Monitoring v1.0/mailcow.mail.received)>5*trendavg(/Mailcow Complete Monitoring v1.0/mailcow.mail.received,1w:now-1w) and trendavg(/Mailcow Complete Monitoring v1.0/mailcow.mail.received,1w:now-1w)>5'
-        name: 'Mailcow: Mail volume spike - {ITEM.VALUE} received (5x baseline) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.received)>5*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w)>5
+        name: 'Mailcow: Mail volume spike - {ITEM.VALUE} received (5x baseline) on {HOST.NAME}'
         priority: WARNING
-        description: 'Eingehende Mails sind mehr als 5x höher als der Wochendurchschnitt. Mögliche Spam-Welle oder ungewöhnlicher Maileingang.'
+        description: Eingehende Mails sind mehr als 5x höher als der Wochendurchschnitt. Mögliche Spam-Welle oder ungewöhnlicher Maileingang.
         manual_close: 'YES'
         tags:
         - tag: scope
           value: anomaly
       - uuid: fb6e0ea6f994432b9c6bc21f3073f552
-        expression: 'last(/Mailcow Complete Monitoring v1.0/mailcow.mail.received)<0.2*trendavg(/Mailcow Complete Monitoring v1.0/mailcow.mail.received,1w:now-1w) and trendavg(/Mailcow Complete Monitoring v1.0/mailcow.mail.received,1w:now-1w)>10'
-        name: 'Mailcow: Mail volume drop - {ITEM.VALUE} received (<20% baseline) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.received)<0.2*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w)>10
+        name: 'Mailcow: Mail volume drop - {ITEM.VALUE} received (<20% baseline) on {HOST.NAME}'
         priority: HIGH
         description: 'Eingehende Mails sind unter 20% des Wochendurchschnitts. Mögliche Ursachen: DNS/MX-Problem, Netzwerk, Firewall.'
         manual_close: 'YES'
@@ -2000,19 +2015,22 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: b79fabf4c4e74fc08fbb509c587bd353
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.mail.deferred)>10
-        name: 'Mailcow: {{ITEM.VALUE}} deferred mails on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.deferred)>10
+        name: 'Mailcow: {ITEM.VALUE} deferred mails on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
       - uuid: 3470837c65eb42f1914e1774673be673
-        expression: 'last(/Mailcow Complete Monitoring v1.0/mailcow.mail.deferred)>5*trendavg(/Mailcow Complete Monitoring v1.0/mailcow.mail.deferred,1w:now-1w) and trendavg(/Mailcow Complete Monitoring v1.0/mailcow.mail.deferred,1w:now-1w)>3'
-        name: 'Mailcow: Deferred spike - {ITEM.VALUE} deferred (5x baseline) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.deferred)>5*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.deferred,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.deferred,1w:now-1w)>3
+        name: 'Mailcow: Deferred spike - {ITEM.VALUE} deferred (5x baseline) on {HOST.NAME}'
         priority: WARNING
-        description: 'Deferred Mails sind mehr als 5x höher als der Wochendurchschnitt. Mögliches Zustellproblem bei Empfänger-Servern.'
+        description: Deferred Mails sind mehr als 5x höher als der Wochendurchschnitt. Mögliches Zustellproblem bei Empfänger-Servern.
         manual_close: 'YES'
         tags:
         - tag: scope
           value: anomaly
+        dependencies:
+        - name: 'Mailcow: {ITEM.VALUE} deferred mails on {HOST.NAME}'
+          expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.deferred)>10
     - uuid: 621052d67dd041248f79d641065fd307
       name: 'Mailcow: Mails bounced (1h)'
       type: ZABBIX_ACTIVE
@@ -2028,19 +2046,22 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: d6fe0a0d45924b318e0b1fe670a12760
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.mail.bounced)>50
-        name: 'Mailcow: {{ITEM.VALUE}} bounced mails on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.bounced)>50
+        name: 'Mailcow: {ITEM.VALUE} bounced mails on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
       - uuid: 257dfed4443a46cab7840f2746404076
-        expression: 'last(/Mailcow Complete Monitoring v1.0/mailcow.mail.bounced)>5*trendavg(/Mailcow Complete Monitoring v1.0/mailcow.mail.bounced,1w:now-1w) and trendavg(/Mailcow Complete Monitoring v1.0/mailcow.mail.bounced,1w:now-1w)>3'
-        name: 'Mailcow: Bounce spike - {ITEM.VALUE} bounced (5x baseline) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.bounced)>5*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.bounced,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.bounced,1w:now-1w)>3
+        name: 'Mailcow: Bounce spike - {ITEM.VALUE} bounced (5x baseline) on {HOST.NAME}'
         priority: WARNING
-        description: 'Bounces sind mehr als 5x höher als der Wochendurchschnitt. Möglicher Backscatter oder Adresslisten-Problem.'
+        description: Bounces sind mehr als 5x höher als der Wochendurchschnitt. Möglicher Backscatter oder Adresslisten-Problem.
         manual_close: 'YES'
         tags:
         - tag: scope
           value: anomaly
+        dependencies:
+        - name: 'Mailcow: {ITEM.VALUE} bounced mails on {HOST.NAME}'
+          expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.bounced)>50
     - uuid: 4e00175095ee48998e5dceb57401eaad
       name: 'Mailcow: Mails rejected (1h)'
       type: ZABBIX_ACTIVE
@@ -2056,10 +2077,10 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: b24dfacfa41642a3b359dd8dd5c21e75
-        expression: 'last(/Mailcow Complete Monitoring v1.0/mailcow.mail.rejected)>10*trendavg(/Mailcow Complete Monitoring v1.0/mailcow.mail.rejected,1w:now-1w) and trendavg(/Mailcow Complete Monitoring v1.0/mailcow.mail.rejected,1w:now-1w)>3'
-        name: 'Mailcow: Reject spike - {ITEM.VALUE} rejected (10x baseline) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.rejected)>10*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.rejected,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.rejected,1w:now-1w)>3
+        name: 'Mailcow: Reject spike - {ITEM.VALUE} rejected (10x baseline) on {HOST.NAME}'
         priority: WARNING
-        description: 'Abgelehnte Mails sind mehr als 10x höher als der Wochendurchschnitt. Möglicher Brute-Force oder Spam-Angriff.'
+        description: Abgelehnte Mails sind mehr als 10x höher als der Wochendurchschnitt. Möglicher Brute-Force oder Spam-Angriff.
         manual_close: 'YES'
         tags:
         - tag: scope
@@ -2079,8 +2100,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 91bb01008bd14de0800ad88947ac0d7f
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.mail.reject.rate)>80
-        name: 'Mailcow: Reject rate {{ITEM.VALUE}}% on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.reject.rate)>80
+        name: 'Mailcow: Reject rate {ITEM.VALUE}% on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 83a6e41fe5474cc4860b9683476a10d8
@@ -2319,8 +2340,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: c43ffc5c2a01427b86c6f6de4a5822a7
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.mail.warnings.sasl)>100
-        name: 'Mailcow: {{ITEM.VALUE}} SASL warnings on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.warnings.sasl)>100
+        name: 'Mailcow: {ITEM.VALUE} SASL warnings on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: c1e13bd122a544908d7837a7d431af30
@@ -2379,8 +2400,8 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: 7e422b40d89c402f871b9c1db8e57143
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.clamav.running)=0
-        name: 'Mailcow: ClamAV not running on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.running)=0
+        name: 'Mailcow: ClamAV not running on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: 8acea33065474e468e1d5a9f47704e69
@@ -2388,7 +2409,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.clamav.version
       delay: 1h
-      history: 90d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -2437,13 +2458,16 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 7f52a5003d73482884356f9322c42cda
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.clamav.daily.age)>7
-        name: 'Mailcow: ClamAV definitions {{ITEM.VALUE}} days old on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.daily.age)>7
+        name: 'Mailcow: ClamAV definitions {ITEM.VALUE} days old on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
+        dependencies:
+        - name: 'Mailcow: ClamAV definitions critically outdated ({ITEM.VALUE} days) on {HOST.NAME}'
+          expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.daily.age)>30
       - uuid: fc71eccc62a948de8a39df84608755c1
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.clamav.daily.age)>30
-        name: 'Mailcow: ClamAV definitions critically outdated ({{ITEM.VALUE}} days) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.daily.age)>30
+        name: 'Mailcow: ClamAV definitions critically outdated ({ITEM.VALUE} days) on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: c3aa8c6664e943348503458368334b2e
@@ -2451,7 +2475,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.clamav.daily.build
       delay: 1h
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -2500,13 +2524,16 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: a138f73968ee4e9a88575d2fa285c634
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.watchdog.overall)<100 and last(/Mailcow Complete Monitoring v1.0/mailcow.watchdog.overall)>=0
-        name: 'Mailcow: Watchdog health {{ITEM.VALUE}}% on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)<100 and last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)>=0
+        name: 'Mailcow: Watchdog health {ITEM.VALUE}% on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
+        dependencies:
+        - name: 'Mailcow: Watchdog health CRITICAL {ITEM.VALUE}% on {HOST.NAME}'
+          expression: last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)<50 and last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)>=0
       - uuid: f1d47cc59615426f891aa8335d8a802d
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.watchdog.overall)<50 and last(/Mailcow Complete Monitoring v1.0/mailcow.watchdog.overall)>=0
-        name: 'Mailcow: Watchdog health CRITICAL {{ITEM.VALUE}}% on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)<50 and last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)>=0
+        name: 'Mailcow: Watchdog health CRITICAL {ITEM.VALUE}% on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: 39848c730b61400f8e0fdc0ac1f4e043
@@ -2813,10 +2840,10 @@ zabbix_export:
       description: Gesamtanzahl gelernter Nachrichten (Ham + Spam)
       triggers:
       - uuid: b1602febcca4424799fb52115562a52d
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.rspamd.bayes.total.learned)<200 and last(/Mailcow Complete Monitoring v1.0/mailcow.rspamd.uptime)>86400
-        name: 'Mailcow: Bayes filter poorly trained ({ITEM.VALUE} messages) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.rspamd.bayes.total.learned)<200 and last(/mailcow_complete_monitoring_v45/mailcow.rspamd.uptime)>86400
+        name: 'Mailcow: Bayes filter poorly trained ({ITEM.VALUE} messages) on {HOST.NAME}'
         priority: INFO
-        description: 'Der Bayes-Filter hat weniger als 200 Nachrichten gelernt. Rspamd empfiehlt mindestens 200 Ham + 200 Spam für zuverlässige Erkennung.'
+        description: Der Bayes-Filter hat weniger als 200 Nachrichten gelernt. Rspamd empfiehlt mindestens 200 Ham + 200 Spam für zuverlässige Erkennung.
         manual_close: 'YES'
     - uuid: a2ec62aa931a494c8e64c206c116d41f
       name: 'Mailcow: Rspamd Bayes ham ratio %'
@@ -2837,7 +2864,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.rspamd.bayes.status
       delay: 5m
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -2865,7 +2892,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.acme.cert.subject
       delay: 1h
-      history: 90d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -2878,7 +2905,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.acme.cert.issuer
       delay: 1h
-      history: 90d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -2891,7 +2918,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.acme.cert.valid.from
       delay: 1h
-      history: 90d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -2904,7 +2931,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.acme.cert.valid.until
       delay: 1h
-      history: 90d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -2927,13 +2954,16 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 9347ce7c87b54e018d0d1b234094d579
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.acme.cert.days.left)<14
-        name: 'Mailcow: ACME cert expires in {{ITEM.VALUE}} days on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<14
+        name: 'Mailcow: ACME cert expires in {ITEM.VALUE} days on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
+        dependencies:
+        - name: 'Mailcow: ACME cert expires in {ITEM.VALUE} days - CRITICAL on {HOST.NAME}'
+          expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<7
       - uuid: 4611e7f01a0c4d1585dbae10f0f1e644
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.acme.cert.days.left)<7
-        name: 'Mailcow: ACME cert expires in {{ITEM.VALUE}} days on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<7
+        name: 'Mailcow: ACME cert expires in {ITEM.VALUE} days - CRITICAL on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: ecfb98b16fd649558a46042a291a5174
@@ -2941,7 +2971,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.acme.cert.serial
       delay: 1h
-      history: 90d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -3032,8 +3062,8 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: 18382ad376e54d0086b3f91ccbc4dc50
-        expression: last(/Mailcow Complete Monitoring v1.0/zabbix.agent.running)=0
-        name: 'Mailcow: Zabbix agent not running on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/zabbix.agent.running)=0
+        name: 'Mailcow: Zabbix agent not running on {HOST.NAME}'
         priority: DISASTER
         manual_close: 'YES'
     - uuid: 92d8d259bff348568ccb1f916b77dda4
@@ -3090,8 +3120,8 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 0a74ad30b8cf4395847f4b79b61eb76d
-        expression: last(/Mailcow Complete Monitoring v1.0/zabbix.agent.log.errors)>5
-        name: 'Mailcow: Zabbix agent errors on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/zabbix.agent.log.errors)>5
+        name: 'Mailcow: Zabbix agent errors on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 8cd6478f9f1641a28dcd90b6b5ee7eca
@@ -3151,7 +3181,7 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: ec6256db740645488f60abf47da836a3
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.collector.running)=0
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.collector.running)=0
         name: 'Mailcow: Collector service down'
         priority: HIGH
         manual_close: 'YES'
@@ -3173,7 +3203,7 @@ zabbix_export:
       units: s
       triggers:
       - uuid: 0cb2dfaa799f4cd78d34d83a06dd5078
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.collector.age)>300
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.collector.age)>300
         name: 'Mailcow: Collector data stale (>5min)'
         priority: WARNING
         manual_close: 'YES'
@@ -3237,7 +3267,7 @@ zabbix_export:
       description: Anzahl fehlgeschlagener Collector-Module
       triggers:
       - uuid: 35c5a0efe9c54accbe541a9f78ecaffa
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.collector.errors)>0
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.collector.errors)>0
         name: 'Mailcow: Collector module errors detected'
         priority: WARNING
         description: Mindestens ein Collector-Modul hat einen Fehler gemeldet
@@ -3246,14 +3276,14 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.collector.error.detail
       delay: '60'
-      history: 30d
+      history: 7d
       value_type: TEXT
       tags:
       - tag: component
         value: collector
       - tag: application
         value: mailcow
-      description: 'Details zu Collector-Fehlern (Modul:Exception)'
+      description: Details zu Collector-Fehlern (Modul:Exception)
     - uuid: 7371a95803d94ac68abcb7dee34cb3d5
       name: 'Mailcow: Collector module timings'
       type: ZABBIX_ACTIVE
@@ -3308,8 +3338,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: de38ce34065a4ca08e494012d26d0f53
-        expression: change(/Mailcow Complete Monitoring v1.0/mailcow.docker.restarts.total)>5
-        name: 'Mailcow: Docker restart count high ({{ITEM.VALUE}}) on {{HOST.NAME}}'
+        expression: change(/mailcow_complete_monitoring_v45/mailcow.docker.restarts.total)>5
+        name: 'Mailcow: Docker restart count high ({ITEM.VALUE}) on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 0f44f2ea3a2949268e18502b403c906b
@@ -3436,8 +3466,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 35f7a9809f59402581ec09a1f0a238ee
-        expression: min(/Mailcow Complete Monitoring v1.0/mailcow.sogo.memcached.evictions,1h)>0 and change(/Mailcow Complete Monitoring v1.0/mailcow.sogo.memcached.evictions)>50
-        name: 'Mailcow: SOGo Memcached cache pressure on {{HOST.NAME}} (>50 evictions/5m)'
+        expression: min(/mailcow_complete_monitoring_v45/mailcow.sogo.memcached.evictions,1h)>0 and change(/mailcow_complete_monitoring_v45/mailcow.sogo.memcached.evictions)>50
+        name: 'Mailcow: SOGo Memcached cache pressure on {HOST.NAME} (>50 evictions/5m)'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 6fc714ab45e7487a869a0591d36fe75a
@@ -3469,8 +3499,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 7a1db2c7d98e460d8448e0e5e31baa7d
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.quarantine.total)>100
-        name: 'Mailcow: Quarantine has {{ITEM.VALUE}} mails on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.quarantine.total)>100
+        name: 'Mailcow: Quarantine has {ITEM.VALUE} mails on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 5023045ba4ee42c7818aaa92c0584610
@@ -3501,8 +3531,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: a957c5327afa422985909ef977ab3f66
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.quarantine.virus)>0
-        name: 'Mailcow: Virus mails in quarantine ({{ITEM.VALUE}}) on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.quarantine.virus)>0
+        name: 'Mailcow: Virus mails in quarantine ({ITEM.VALUE}) on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 444aded032ab409b81792d55602ac9b9
@@ -3538,7 +3568,7 @@ zabbix_export:
       type: ZABBIX_ACTIVE
       key: mailcow.quarantine.top.domains
       delay: 5m
-      history: 30d
+      history: 7d
       value_type: CHAR
       tags:
       - tag: component
@@ -3561,8 +3591,8 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 68f62e2c64af45e381fa8a111b8487ec
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.queue.deferred)>10
-        name: 'Mailcow: {{ITEM.VALUE}} deferred mails on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.queue.deferred)>10
+        name: 'Mailcow: {ITEM.VALUE} deferred mails in queue on {HOST.NAME}'
         priority: WARNING
         manual_close: 'YES'
     - uuid: 36bfb93270b24405855fd1661c123d0f
@@ -3607,8 +3637,8 @@ zabbix_export:
       units: h
       triggers:
       - uuid: d7fc204d558d49a38776dcd12bdff538
-        expression: last(/Mailcow Complete Monitoring v1.0/mailcow.queue.age.oldest.hours)>24
-        name: 'Mailcow: Deferred mail stuck for {{ITEM.VALUE}}h on {{HOST.NAME}}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.queue.age.oldest.hours)>24
+        name: 'Mailcow: Deferred mail stuck for {ITEM.VALUE}h on {HOST.NAME}'
         priority: HIGH
         manual_close: 'YES'
     - uuid: ea449d11974c4a3382bd85d86a5a65e7
@@ -3723,84 +3753,140 @@ zabbix_export:
         - type: svggraph
           name: Queue & Connections
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.pfmailq
           - type: STRING
-            name: ds.items.0.0
-            value: postfix.pfmailq
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.connections
           - type: STRING
-            name: ds.items.1.0
-            value: postfix.connections
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '0000DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Security Events
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.log.sasl.auth.failed
           - type: STRING
-            name: ds.items.0.0
-            value: postfix.log.sasl.auth.failed
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.log.relay.denied
           - type: STRING
-            name: ds.items.1.0
-            value: postfix.log.relay.denied
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'FF8800'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.log.rbl.reject
           - type: STRING
-            name: ds.items.2.0
-            value: postfix.log.rbl.reject
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'DDDD00'
+          - type: ITEM
+            name: ds.0.itemids.3
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.log.tls.failed
           - type: STRING
-            name: ds.items.3.0
-            value: postfix.log.tls.failed
-          - type: STRING
-            name: ds.color.3
+            name: ds.0.color.3
             value: '0000DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
         - type: svggraph
           name: Mail Problems
           x: '0'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.log.errors
           - type: STRING
-            name: ds.items.0.0
-            value: postfix.log.errors
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.log.warnings
           - type: STRING
-            name: ds.items.1.0
-            value: postfix.log.warnings
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'FF8800'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.log.quota.exceeded
           - type: STRING
-            name: ds.items.2.0
-            value: postfix.log.quota.exceeded
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'DDDD00'
+          - type: ITEM
+            name: ds.0.itemids.3
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.log.spam.rejected
           - type: STRING
-            name: ds.items.3.0
-            value: postfix.log.spam.rejected
-          - type: STRING
-            name: ds.color.3
+            name: ds.0.color.3
             value: 'DD00DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAC
     - uuid: 5079a23e06e149218c1185d12ace97d5
       name: 02 - TLS Certificates
       pages:
@@ -3808,28 +3894,46 @@ zabbix_export:
         - type: svggraph
           name: TLS Certificate Expiry (Days)
           x: '0'
-          y: '0'
+          'y': '0'
           width: '72'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.tls.cert.days.443
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.tls.cert.days.443
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.tls.cert.days.587
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.tls.cert.days.587
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.tls.cert.days.993
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.tls.cert.days.993
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'DD00DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
     - uuid: bcfe4421412d4f35846a669792c973f2
       name: 03 - Security
       pages:
@@ -3837,29 +3941,57 @@ zabbix_export:
         - type: svggraph
           name: Fail2ban / Netfilter Bans
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.security.fail2ban.banned
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.security.fail2ban.banned
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: RBL Blacklist Status
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.security.rbl.listed
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.security.rbl.listed
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
     - uuid: c3f19185412c4c0985450700dcc13d63
       name: 04 - Rspamd
       pages:
@@ -3867,85 +3999,151 @@ zabbix_export:
         - type: svggraph
           name: Spam vs Ham
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.rspamd.ham
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.rspamd.ham
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.rspamd.spam
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.rspamd.spam
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.rspamd.greylist
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.rspamd.greylist
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'DDDD00'
+          - type: ITEM
+            name: ds.0.itemids.3
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.rspamd.soft_reject
           - type: STRING
-            name: ds.items.3.0
-            value: mailcow.rspamd.soft_reject
-          - type: STRING
-            name: ds.color.3
+            name: ds.0.color.3
             value: 'FF8800'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Spam Rate %
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.rspamd.spam.rate
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.rspamd.spam.rate
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
         - type: svggraph
           name: Scanned & Learned
           x: '0'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.rspamd.scanned
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.rspamd.scanned
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.rspamd.learned
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.rspamd.learned
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '00AA00'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAC
         - type: svggraph
           name: Bayes Training (Ham / Spam)
           x: '36'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.rspamd.bayes.ham.learned
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.rspamd.bayes.ham.learned
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.rspamd.bayes.spam.learned
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.rspamd.bayes.spam.learned
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAD
     - uuid: dd1363db081848dc81a07b2b00188e2e
       name: 05 - Dovecot
       pages:
@@ -3953,41 +4151,73 @@ zabbix_export:
         - type: svggraph
           name: Dovecot Connections
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.dovecot.connections
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.dovecot.connections
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: IMAP/POP3 Failures
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.dovecot.imap.login.failed
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.dovecot.imap.login.failed
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.dovecot.pop3.login.failed
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.dovecot.pop3.login.failed
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'FF8800'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.dovecot.imap.errors
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.dovecot.imap.errors
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'DDDD00'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
     - uuid: 1a79ce0c97c849c28925b88a6494c79c
       name: 06 - Disk
       pages:
@@ -3995,47 +4225,81 @@ zabbix_export:
         - type: svggraph
           name: Disk Usage %
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.disk.root.used
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.disk.root.used
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.disk.docker.used
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.disk.docker.used
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.disk.vmail.used
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.disk.vmail.used
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.3
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.disk.log.used
           - type: STRING
-            name: ds.items.3.0
-            value: mailcow.disk.log.used
-          - type: STRING
-            name: ds.color.3
+            name: ds.0.color.3
             value: 'FF8800'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: vmail Maildir Size (MB)
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.disk.vmail.maildir.size
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.disk.vmail.maildir.size
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
     - uuid: e8db3213ed304735852e3191deb62ece
       name: 07 - Backup
       pages:
@@ -4043,41 +4307,73 @@ zabbix_export:
         - type: svggraph
           name: Backup Age (Hours) & Count
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.backup.age
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.backup.age
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.backup.count
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.backup.count
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '0000DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Backup Size (MB) & Free Disk %
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.backup.size
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.backup.size
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.backup.disk.free
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.backup.disk.free
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '00AA00'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
     - uuid: 8e4479a1be9349248cc3bd605bacb3ec
       name: 08 - Sync Jobs
       pages:
@@ -4085,34 +4381,54 @@ zabbix_export:
         - type: svggraph
           name: Sync Jobs
           x: '0'
-          y: '0'
+          'y': '0'
           width: '72'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.sync.jobs.active
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.sync.jobs.active
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.sync.jobs.running
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.sync.jobs.running
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.sync.jobs.failed
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.sync.jobs.failed
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.3
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.sync.jobs.stuck
           - type: STRING
-            name: ds.items.3.0
-            value: mailcow.sync.jobs.stuck
-          - type: STRING
-            name: ds.color.3
+            name: ds.0.color.3
             value: 'FF8800'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
     - uuid: fe0f9b4ad56c4de68bb2aa652d1d1096
       name: 09 - Mailboxes
       pages:
@@ -4120,47 +4436,81 @@ zabbix_export:
         - type: svggraph
           name: Mailbox Count
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mailbox.total
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.mailbox.total
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mailbox.active
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.mailbox.active
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mailbox.unlimited
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.mailbox.unlimited
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'FF8800'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Quota Usage (MB) & Over Quota
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mailbox.quota.used.total
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.mailbox.quota.used.total
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mailbox.over.quota
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.mailbox.over.quota
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
     - uuid: d0290ecc1b1a43a28844730c54f11b2a
       name: 10 - Mailflow
       pages:
@@ -4168,109 +4518,183 @@ zabbix_export:
         - type: svggraph
           name: Mail Volume (hourly)
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.received
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.mail.received
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.delivered
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.mail.delivered
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.bounced
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.mail.bounced
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.3
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.rejected
           - type: STRING
-            name: ds.items.3.0
-            value: mailcow.mail.rejected
-          - type: STRING
-            name: ds.color.3
+            name: ds.0.color.3
             value: 'FF8800'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Reject Breakdown (hourly)
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.reject.rbl
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.mail.reject.rbl
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.reject.unknown.user
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.mail.reject.unknown.user
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'FF8800'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.reject.cleanup
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.mail.reject.cleanup
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: '9900CC'
+          - type: ITEM
+            name: ds.0.itemids.3
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.reject.domain.notfound
           - type: STRING
-            name: ds.items.3.0
-            value: mailcow.mail.reject.domain.notfound
-          - type: STRING
-            name: ds.color.3
+            name: ds.0.color.3
             value: '0088AA'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
         - type: svggraph
           name: Bytes (hourly)
           x: '0'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.bytes.received
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.mail.bytes.received
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.bytes.delivered
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.mail.bytes.delivered
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '00AA00'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAC
         - type: svggraph
           name: Warnings (hourly)
           x: '36'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.warnings.sasl
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.mail.warnings.sasl
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.warnings.tls
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.mail.warnings.tls
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'FF8800'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.mail.warnings.postscreen
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.mail.warnings.postscreen
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: '0088AA'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAD
     - uuid: 73e4bf1a522a458e8a46f19dfa384859
       name: 11 - ClamAV
       pages:
@@ -4278,35 +4702,65 @@ zabbix_export:
         - type: svggraph
           name: ClamAV Daily DB Age (days)
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.clamav.daily.age
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.clamav.daily.age
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Signatures & DB Size
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.clamav.signatures
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.clamav.signatures
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.clamav.db.size
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.clamav.db.size
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '00AA00'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
     - uuid: 45fe8296e28f4034879f221bdc0c393a
       name: 12 - Watchdog
       pages:
@@ -4314,91 +4768,159 @@ zabbix_export:
         - type: svggraph
           name: Watchdog Overall Health %
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.watchdog.overall
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.watchdog.overall
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '00AA00'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Core Services Health
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.watchdog.postfix
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.watchdog.postfix
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.watchdog.dovecot
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.watchdog.dovecot
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.watchdog.rspamd
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.watchdog.rspamd
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'FF8800'
+          - type: ITEM
+            name: ds.0.itemids.3
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.watchdog.mysql
           - type: STRING
-            name: ds.items.3.0
-            value: mailcow.watchdog.mysql
-          - type: STRING
-            name: ds.color.3
+            name: ds.0.color.3
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
         - type: svggraph
           name: Supporting Services Health
           x: '0'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.watchdog.nginx
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.watchdog.nginx
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.watchdog.sogo
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.watchdog.sogo
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.watchdog.redis
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.watchdog.redis
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'FF8800'
+          - type: ITEM
+            name: ds.0.itemids.3
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.watchdog.unbound
           - type: STRING
-            name: ds.items.3.0
-            value: mailcow.watchdog.unbound
-          - type: STRING
-            name: ds.color.3
+            name: ds.0.color.3
             value: '9900CC'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAC
         - type: svggraph
           name: Unhealthy Services Count
           x: '36'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.watchdog.unhealthy
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.watchdog.unhealthy
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAD
     - uuid: e1b6760609c24d9681efb281eeed69af
       name: 13 - ACME Certificate
       pages:
@@ -4406,16 +4928,30 @@ zabbix_export:
         - type: svggraph
           name: Certificate Days Left
           x: '0'
-          y: '0'
+          'y': '0'
           width: '72'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.acme.cert.days.left
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.acme.cert.days.left
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '00AA00'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
     - uuid: 97ca4234921b4080807017977aac571f
       name: 14 - Docker Health
       pages:
@@ -4423,55 +4959,111 @@ zabbix_export:
         - type: svggraph
           name: Docker Total CPU %
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.docker.cpu.total
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.docker.cpu.total
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Docker Total Memory (MB)
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.docker.mem.total.mb
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.docker.mem.total.mb
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
         - type: svggraph
           name: Docker Restart Count
           x: '0'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.docker.restarts.total
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.docker.restarts.total
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'FF8800'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAC
         - type: svggraph
           name: Docker Container Count
           x: '36'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.docker.total
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.docker.total
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '00AA00'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAD
     - uuid: 5d279d94d6dc4c2f8ff924287fd9c650
       name: 15 - SOGo / Memcached
       pages:
@@ -4479,61 +5071,119 @@ zabbix_export:
         - type: svggraph
           name: Memcached Hit Rate %
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.sogo.memcached.hit.rate
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.sogo.memcached.hit.rate
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '00AA00'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Memcached Items
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.sogo.memcached.items
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.sogo.memcached.items
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
         - type: svggraph
           name: Memcached Hits vs Misses
           x: '0'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.sogo.memcached.hits
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.sogo.memcached.hits
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.sogo.memcached.misses
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.sogo.memcached.misses
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAC
         - type: svggraph
           name: Memcached Bytes Used
           x: '36'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.sogo.memcached.bytes
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.sogo.memcached.bytes
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'FF8800'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAD
     - uuid: e00a5871fe6a4dfa8572ca94f9c0078c
       name: 16 - Quarantine
       pages:
@@ -4541,66 +5191,116 @@ zabbix_export:
         - type: svggraph
           name: Quarantine Total Mails
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.quarantine.total
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.quarantine.total
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.quarantine.spam
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.quarantine.spam
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'FF8800'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.quarantine.virus
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.quarantine.virus
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'AA00AA'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Queue Deferred / Active / Hold
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.queue.deferred
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.queue.deferred
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.queue.active
           - type: STRING
-            name: ds.items.1.0
-            value: mailcow.queue.active
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '0000DD'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.queue.hold
           - type: STRING
-            name: ds.items.2.0
-            value: mailcow.queue.hold
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'FF8800'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
         - type: svggraph
           name: Queue Oldest Deferred (hours)
           x: '0'
-          y: '5'
+          'y': '5'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.queue.age.oldest.hours
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.queue.age.oldest.hours
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAC
     - uuid: 3557d3b65f3d43a68cfc6cde133e85e9
       name: 17 - Updates
       pages:
@@ -4608,16 +5308,30 @@ zabbix_export:
         - type: svggraph
           name: Commits Behind
           x: '0'
-          y: '0'
+          'y': '0'
           width: '72'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.updates.commits.behind
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.updates.commits.behind
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'FF8800'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
     - uuid: 230fbf48ea834aa0871bea74c8237ce0
       name: 18 - Agent & Collector
       pages:
@@ -4625,35 +5339,65 @@ zabbix_export:
         - type: svggraph
           name: Agent Errors & Warnings
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: zabbix.agent.log.errors
           - type: STRING
-            name: ds.items.0.0
-            value: zabbix.agent.log.errors
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: zabbix.agent.log.warnings
           - type: STRING
-            name: ds.items.1.0
-            value: zabbix.agent.log.warnings
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'FF8800'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Collector Data Age
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: mailcow.collector.age
           - type: STRING
-            name: ds.items.0.0
-            value: mailcow.collector.age
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '0000DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
     - uuid: c2b99cdcf4694599a5c4131be975aa8a
       name: 19 - Postscreen
       pages:
@@ -4661,59 +5405,97 @@ zabbix_export:
         - type: svggraph
           name: Postscreen Connections
           x: '0'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.postscreen.connect
           - type: STRING
-            name: ds.items.0.0
-            value: postfix.postscreen.connect
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: '888888'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.postscreen.pass.new
           - type: STRING
-            name: ds.items.1.0
-            value: postfix.postscreen.pass.new
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: '00AA00'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.postscreen.pass.old
           - type: STRING
-            name: ds.items.2.0
-            value: postfix.postscreen.pass.old
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: '0000DD'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAA
         - type: svggraph
           name: Postscreen Blocks
           x: '36'
-          y: '0'
+          'y': '0'
           width: '36'
           height: '5'
           fields:
+          - type: INTEGER
+            name: ds.0.dataset_type
+            value: '0'
+          - type: ITEM
+            name: ds.0.itemids.0
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.postscreen.reject
           - type: STRING
-            name: ds.items.0.0
-            value: postfix.postscreen.reject
-          - type: STRING
-            name: ds.color.0
+            name: ds.0.color.0
             value: 'DD0000'
+          - type: ITEM
+            name: ds.0.itemids.1
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.postscreen.dnsbl
           - type: STRING
-            name: ds.items.1.0
-            value: postfix.postscreen.dnsbl
-          - type: STRING
-            name: ds.color.1
+            name: ds.0.color.1
             value: 'FF8800'
+          - type: ITEM
+            name: ds.0.itemids.2
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.postscreen.pregreet
           - type: STRING
-            name: ds.items.2.0
-            value: postfix.postscreen.pregreet
-          - type: STRING
-            name: ds.color.2
+            name: ds.0.color.2
             value: 'DDDD00'
+          - type: ITEM
+            name: ds.0.itemids.3
+            value:
+              host: mailcow_complete_monitoring_v45
+              key: postfix.postscreen.hangup
           - type: STRING
-            name: ds.items.3.0
-            value: postfix.postscreen.hangup
-          - type: STRING
-            name: ds.color.3
+            name: ds.0.color.3
             value: '888888'
+          - type: INTEGER
+            name: ds.0.missingdatafunc
+            value: '1'
+          - type: INTEGER
+            name: ds.0.width
+            value: '2'
+          - type: STRING
+            name: reference
+            value: AAAAB
     valuemaps:
     - uuid: 815f4c0610424a298dda3981f5bfcb15
       name: Mailcow Service State

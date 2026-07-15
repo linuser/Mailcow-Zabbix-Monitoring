@@ -142,7 +142,7 @@ def find_all_containers():
 # ====================================================================
 
 def collect_postfix(container):
-    """Postfix-Metriken sammeln."""
+    """Postfix-Metriken sammeln — 1 docker_exec statt 6 (#opt1)."""
     data = {
         "postfix.process.running": 0,
         "postfix.pfmailq": 0,
@@ -153,33 +153,65 @@ def collect_postfix(container):
     if not container:
         return data
 
+    # Alles in einem Aufruf: Sektionen getrennt durch Marker
+    batch = docker_exec(container, """sh -c '
+PID=$(cat /var/spool/postfix/pid/master.pid 2>/dev/null | tr -dc '0-9')
+echo "===PID==="
+[ -n "$PID" ] && [ -d "/proc/$PID" ] && echo 1 || echo 0
+echo "===MAILQ==="
+mailq 2>/dev/null
+echo "===CONN==="
+ss -tn state established "( dport = :25 or sport = :25 )" 2>/dev/null | tail -n +2 | wc -l
+echo "===DISK==="
+df /var/spool/postfix 2>/dev/null | tail -1
+echo "===VER==="
+postconf mail_version 2>/dev/null; exit 0
+'""", timeout=20)
+
+    if not batch:
+        return data
+
+    # Sektionen parsen
+    sections = {}
+    current = None
+    for line in batch.splitlines():
+        if line.startswith("===") and line.endswith("==="):
+            current = line.strip("=")
+            sections[current] = []
+        elif current:
+            sections[current].append(line)
+
     # Prozess-Check
-    pid = docker_exec(container, "cat /var/spool/postfix/pid/master.pid 2>/dev/null").strip()
-    if pid:
-        check = docker_exec(container, f"test -d /proc/{pid} && echo 1 || echo 0")
-        data["postfix.process.running"] = 1 if check == "1" else 0
+    pid_lines = sections.get("PID", [])
+    if pid_lines and pid_lines[0].strip() == "1":
+        data["postfix.process.running"] = 1
 
     # Queue
-    mq = docker_exec(container, 'mailq 2>/dev/null')
-    data["postfix.pfmailq"] = len([l for l in mq.splitlines() if l and l[0].isalnum() and l[0].isupper()])
+    mq_lines = sections.get("MAILQ", [])
+    data["postfix.pfmailq"] = len([l for l in mq_lines if l and l[0].isalnum() and l[0].isupper()])
 
     # Connections
-    conn_count = docker_exec_int(container,
-        "sh -c \"ss -tn state established '( dport = :25 or sport = :25 )' 2>/dev/null | tail -n +2 | wc -l\"")
-    data["postfix.connections"] = max(0, conn_count)
+    conn_lines = sections.get("CONN", [])
+    if conn_lines:
+        try:
+            data["postfix.connections"] = max(0, int(conn_lines[0].strip()))
+        except (ValueError, IndexError):
+            pass
 
     # Queue disk
-    df_out = docker_exec(container, "df /var/spool/postfix 2>/dev/null")
-    for line in df_out.splitlines()[1:]:
-        parts = line.split()
+    disk_lines = sections.get("DISK", [])
+    if disk_lines:
+        parts = disk_lines[0].split()
         if len(parts) >= 5:
-            data["mailcow.queue.disk"] = int(parts[4].replace("%", ""))
-            break
+            try:
+                data["mailcow.queue.disk"] = int(parts[4].replace("%", ""))
+            except ValueError:
+                pass
 
     # Version
-    ver = docker_exec(container, "postconf mail_version 2>/dev/null")
-    if ver and "=" in ver:
-        data["mailcow.container.version.postfix"] = ver.split()[-1]
+    ver_lines = sections.get("VER", [])
+    if ver_lines and "=" in ver_lines[0]:
+        data["mailcow.container.version.postfix"] = ver_lines[0].split()[-1]
 
     return data
 
@@ -218,7 +250,7 @@ def collect_postfix_logs():
 
 
 def collect_dovecot(container):
-    """Dovecot-Metriken sammeln."""
+    """Dovecot-Metriken — inline statt 9 Script-Aufrufe (#opt10)."""
     data = {
         "mailcow.dovecot.running": 0,
         "mailcow.dovecot.connections": 0,
@@ -234,22 +266,72 @@ def collect_dovecot(container):
     if not container:
         return data
 
-    checks = [
-        ("mailcow.dovecot.running", "process"),
-        ("mailcow.dovecot.connections", "connections"),
-        ("mailcow.dovecot.imap.errors", "imap_errors"),
-        ("mailcow.dovecot.imap.login.failed", "imap_login_failed"),
-        ("mailcow.dovecot.pop3.login.failed", "pop3_login_failed"),
-        ("mailcow.dovecot.imap.disconnected", "imap_disconnected"),
-        ("mailcow.dovecot.quota.warnings", "quota_warnings"),
-        ("mailcow.dovecot.sync.errors", "sync_errors"),
-    ]
-    for json_key, arg in checks:
-        data[json_key] = run_int(f"/usr/local/bin/dovecot_check.sh {arg} 2>/dev/null")
+    data["mailcow.dovecot.running"] = 1
 
-    version = run(f"/usr/local/bin/dovecot_check.sh version 2>/dev/null", default="unknown")
-    data["mailcow.dovecot.version"] = version
-    data["mailcow.container.version.dovecot"] = version
+    # Alles in einem docker_exec: version + connections + log-grep
+    batch = docker_exec(container, """sh -c '
+echo ===VER===
+dovecot --version 2>/dev/null | head -1
+echo ===CONN===
+doveadm who 2>/dev/null | wc -l
+echo ===LOG===
+tail -1000 /var/log/dovecot.log 2>/dev/null | awk "
+/imap.*authentication failed|imap.*login failed/{a++}
+/imap.*disconnected|imap.*connection closed/{b++}
+/pop3.*authentication failed|pop3.*login failed/{c++}
+/imap.*[Ee]rror/{d++}
+/quota.*warning|quota.*exceeded/{e++}
+/sync.*error|sync.*failed/{f++}
+END{printf \"%d %d %d %d %d %d\",a,b,c,d,e,f}
+"
+'""", timeout=15)
+
+    if not batch:
+        return data
+
+    sections = {}
+    current = None
+    for line in batch.splitlines():
+        if line.startswith("===") and line.endswith("==="):
+            current = line.strip("=")
+            sections[current] = []
+        elif current:
+            sections[current].append(line)
+
+    # Version
+    ver_lines = sections.get("VER", [])
+    if ver_lines and ver_lines[0].strip():
+        version = ver_lines[0].split()[0] if ver_lines[0].split() else "unknown"
+        data["mailcow.dovecot.version"] = version
+        data["mailcow.container.version.dovecot"] = version
+
+    # Connections
+    conn_lines = sections.get("CONN", [])
+    if conn_lines:
+        try:
+            data["mailcow.dovecot.connections"] = int(conn_lines[0].strip())
+        except (ValueError, IndexError):
+            pass
+
+    # Log-Counts (awk output: "imap_login_failed imap_disconnected pop3_login_failed imap_errors quota_warnings sync_errors")
+    log_lines = sections.get("LOG", [])
+    if log_lines:
+        parts = log_lines[-1].strip().split()
+        keys = [
+            "mailcow.dovecot.imap.login.failed",
+            "mailcow.dovecot.imap.disconnected",
+            "mailcow.dovecot.pop3.login.failed",
+            "mailcow.dovecot.imap.errors",
+            "mailcow.dovecot.quota.warnings",
+            "mailcow.dovecot.sync.errors",
+        ]
+        for i, key in enumerate(keys):
+            if i < len(parts):
+                try:
+                    data[key] = int(parts[i])
+                except ValueError:
+                    pass
+
     return data
 
 
@@ -282,7 +364,32 @@ def collect_rspamd(container):
 
     data["mailcow.rspamd.running"] = 1
 
-    raw = docker_exec(container, "wget -q -O - --timeout=5 http://localhost:11334/stat 2>/dev/null")
+    # Beide Abfragen in einem docker_exec (#opt7)
+    combined = docker_exec(container,
+        "sh -c 'echo ===STAT=== && wget -q -O - --timeout=5 http://localhost:11334/stat 2>/dev/null && "
+        "echo ===BAYES===; rspamc stat 2>/dev/null; exit 0'", timeout=15)
+
+    if not combined:
+        return data
+
+    # Sektionen trennen
+    stat_raw = ""
+    bayes_raw = ""
+    current = None
+    for line in combined.splitlines():
+        if line.strip() == "===STAT===":
+            current = "STAT"
+            continue
+        elif line.strip() == "===BAYES===":
+            current = "BAYES"
+            continue
+        if current == "STAT":
+            stat_raw += line + "\n"
+        elif current == "BAYES":
+            bayes_raw += line + "\n"
+
+    # JSON-Stats parsen
+    raw = stat_raw.strip()
     if not raw:
         return data
 
@@ -318,8 +425,7 @@ def collect_rspamd(container):
             parts.append(f'{act_name.replace(" ", "_")}:{act_count}')
     data["mailcow.rspamd.action.detail"] = ",".join(parts) if parts else "-"
 
-    # --- Bayes Training Stats via rspamc stat ---
-    bayes_raw = docker_exec(container, "rspamc stat 2>/dev/null", timeout=10)
+    # --- Bayes Training Stats (bereits oben gesammelt) ---
     if bayes_raw:
         ham_learned = 0
         spam_learned = 0
@@ -393,8 +499,10 @@ def collect_fail2ban(container):
     data["mailcow.security.fail2ban.banned"] = banned
 
     # Pro-Service Bans: nur wenn fail2ban-client vorhanden (alte Mailcow-Versionen)
-    has_f2b = docker_exec(container, "which fail2ban-client 2>/dev/null")
-    if has_f2b:
+    # Ergebnis wird gecacht um nicht bei jedem Lauf docker exec aufzurufen
+    if not hasattr(collect_fail2ban, "_has_f2b"):
+        collect_fail2ban._has_f2b = bool(docker_exec(container, "which fail2ban-client 2>/dev/null"))
+    if collect_fail2ban._has_f2b:
         for service, key in [("postfix-sasl", "postfix"), ("dovecot", "dovecot"), ("sogo-auth", "sogo")]:
             out = docker_exec(container, f"fail2ban-client status {service} 2>/dev/null")
             for line in out.splitlines():
@@ -438,19 +546,40 @@ def collect_disk(dovecot_container):
     data["mailcow.disk.vmail.maildir.size"] = 0
 
     if dovecot_container:
-        exists = docker_exec(dovecot_container, "test -d /var/vmail && echo 1 || echo 0")
-        if exists == "1":
-            data["mailcow.disk.vmail.exists"] = 1
-            df_out = docker_exec(dovecot_container, "df /var/vmail 2>/dev/null")
-            lines = df_out.splitlines()
-            if len(lines) >= 2:
-                parts = lines[-1].split()
-                if len(parts) >= 5:
-                    data["mailcow.disk.vmail.total"] = int(parts[1])
-                    data["mailcow.disk.vmail.free"] = int(parts[3])
-                    data["mailcow.disk.vmail.used"] = int(parts[4].replace("%", ""))
-            data["mailcow.disk.vmail.maildir.size"] = docker_exec_int(
-                dovecot_container, "du -sm /var/vmail 2>/dev/null | cut -f1")
+        # 3 Checks in einem Aufruf (#opt8)
+        vmail_batch = docker_exec(dovecot_container,
+            "sh -c 'echo ===EXISTS=== && test -d /var/vmail && echo 1 || echo 0; "
+            "echo ===DF=== && df /var/vmail 2>/dev/null; "
+            "echo ===DU===; du -sm /var/vmail 2>/dev/null | cut -f1; exit 0'", timeout=20)
+
+        if vmail_batch:
+            sections = {}
+            current = None
+            for line in vmail_batch.splitlines():
+                if line.startswith("===") and line.endswith("==="):
+                    current = line.strip("=")
+                    sections[current] = []
+                elif current:
+                    sections[current].append(line)
+
+            exists_lines = sections.get("EXISTS", [])
+            if exists_lines and exists_lines[0].strip() == "1":
+                data["mailcow.disk.vmail.exists"] = 1
+
+                df_lines = sections.get("DF", [])
+                if len(df_lines) >= 2:
+                    parts = df_lines[-1].split()
+                    if len(parts) >= 5:
+                        data["mailcow.disk.vmail.total"] = int(parts[1])
+                        data["mailcow.disk.vmail.free"] = int(parts[3])
+                        data["mailcow.disk.vmail.used"] = int(parts[4].replace("%", ""))
+
+                du_lines = sections.get("DU", [])
+                if du_lines:
+                    try:
+                        data["mailcow.disk.vmail.maildir.size"] = int(du_lines[0].strip())
+                    except (ValueError, IndexError):
+                        pass
 
     return data
 
@@ -690,7 +819,7 @@ def collect_watchdog(container):
 
 
 def collect_acme():
-    """ACME/Let's Encrypt Zertifikat-Metriken."""
+    """ACME/Let's Encrypt Zertifikat-Metriken — 1 openssl statt 6 (#opt6)."""
     data = {
         "mailcow.acme.cert.exists": 0,
         "mailcow.acme.cert.subject": "unknown",
@@ -707,53 +836,34 @@ def collect_acme():
 
     data["mailcow.acme.cert.exists"] = 1
 
-    # Subject
-    subj = run(f'openssl x509 -in "{cert_path}" -noout -subject 2>/dev/null')
-    if subj:
-        # "subject=CN = cow.fox1.de" → "cow.fox1.de"
-        m = re.search(r'CN\s*=\s*(.+)', subj)
-        if m:
-            data["mailcow.acme.cert.subject"] = m.group(1).strip()
+    # Alles in einem openssl-Aufruf
+    raw = run(f'openssl x509 -in "{cert_path}" -noout -subject -issuer -dates -serial 2>/dev/null')
+    if not raw:
+        return data
 
-    # Issuer
-    iss = run(f'openssl x509 -in "{cert_path}" -noout -issuer 2>/dev/null')
-    if iss:
-        m = re.search(r'CN\s*=\s*(.+)', iss)
-        if m:
-            data["mailcow.acme.cert.issuer"] = m.group(1).strip()
-
-    # Dates
-    dates = run(f'openssl x509 -in "{cert_path}" -noout -dates 2>/dev/null')
-    if dates:
-        for line in dates.splitlines():
-            if line.startswith("notBefore="):
-                data["mailcow.acme.cert.valid.from"] = line.split("=", 1)[1].strip()
-            elif line.startswith("notAfter="):
-                data["mailcow.acme.cert.valid.until"] = line.split("=", 1)[1].strip()
-
-    # Days left
-    days_raw = run(f'openssl x509 -in "{cert_path}" -noout -checkend 0 2>/dev/null; '
-                   f'echo "---"; '
-                   f'openssl x509 -in "{cert_path}" -noout -enddate 2>/dev/null')
-    enddate = run(f'openssl x509 -in "{cert_path}" -noout -enddate 2>/dev/null')
-    if enddate:
-        # "notAfter=May 16 21:39:00 2026 GMT"
-        m = re.search(r'notAfter=(.+)', enddate)
-        if m:
+    for line in raw.splitlines():
+        if line.startswith("subject="):
+            m = re.search(r'CN\s*=\s*(.+)', line)
+            if m:
+                data["mailcow.acme.cert.subject"] = m.group(1).strip()
+        elif line.startswith("issuer="):
+            m = re.search(r'CN\s*=\s*(.+)', line)
+            if m:
+                data["mailcow.acme.cert.issuer"] = m.group(1).strip()
+        elif line.startswith("notBefore="):
+            data["mailcow.acme.cert.valid.from"] = line.split("=", 1)[1].strip()
+        elif line.startswith("notAfter="):
+            end_str = line.split("=", 1)[1].strip()
+            data["mailcow.acme.cert.valid.until"] = end_str
             try:
-                end_str = m.group(1).strip()
-                # Parse "Feb 15 21:39:00 2026 GMT"
                 end_dt = datetime.strptime(end_str, "%b %d %H:%M:%S %Y %Z")
                 end_dt = end_dt.replace(tzinfo=timezone.utc)
                 days_left = (end_dt - datetime.now(timezone.utc)).days
                 data["mailcow.acme.cert.days.left"] = max(0, days_left)
             except (ValueError, Exception):
                 pass
-
-    # Serial
-    serial = run(f'openssl x509 -in "{cert_path}" -noout -serial 2>/dev/null')
-    if serial:
-        data["mailcow.acme.cert.serial"] = serial.split("=", 1)[-1].strip()
+        elif line.startswith("serial="):
+            data["mailcow.acme.cert.serial"] = line.split("=", 1)[-1].strip()
 
     return data
 
@@ -1132,7 +1242,7 @@ def collect_sogo(container):
 
 
 def collect_quarantine(mysql_container, dbpass):
-    """Quarantine Stats aus MySQL."""
+    """Quarantine Stats aus MySQL — 1 Query statt 3 (#opt2)."""
     data = {
         "mailcow.quarantine.total": 0,
         "mailcow.quarantine.spam": 0,
@@ -1145,40 +1255,27 @@ def collect_quarantine(mysql_container, dbpass):
     if not mysql_container or not dbpass:
         return data
 
-    # Gesamtzahl + Alter
+    # Alles in einem Query: Counts + Alter + Spam/Virus
     result = mysql_exec(mysql_container, dbpass,
         "SELECT COUNT(*), "
         "COALESCE(TIMESTAMPDIFF(HOUR, MIN(created), NOW()), 0), "
-        "COALESCE(TIMESTAMPDIFF(HOUR, MAX(created), NOW()), 0) "
+        "COALESCE(TIMESTAMPDIFF(HOUR, MAX(created), NOW()), 0), "
+        "COALESCE(SUM(CASE WHEN action='reject' THEN 1 ELSE 0 END),0), "
+        "COALESCE(SUM(CASE WHEN action='virus' THEN 1 ELSE 0 END),0) "
         "FROM quarantine", timeout=10)
 
     if result:
         for line in result.splitlines():
             parts = line.split('\t')
-            if len(parts) >= 3 and parts[0].isdigit():
+            if len(parts) >= 5 and parts[0].isdigit():
                 data["mailcow.quarantine.total"] = int(parts[0])
                 data["mailcow.quarantine.age.oldest.hours"] = int(parts[1])
                 data["mailcow.quarantine.age.newest.hours"] = int(parts[2])
+                data["mailcow.quarantine.spam"] = int(parts[3])
+                data["mailcow.quarantine.virus"] = int(parts[4])
 
-    # Spam vs Virus (nur wenn Quarantine nicht leer)
+    # Top Domains (nur wenn Quarantine nicht leer)
     if data["mailcow.quarantine.total"] > 0:
-        result = mysql_exec(mysql_container, dbpass,
-            "SELECT "
-            "COALESCE(SUM(CASE WHEN action='reject' THEN 1 ELSE 0 END),0), "
-            "COALESCE(SUM(CASE WHEN action='virus' THEN 1 ELSE 0 END),0) "
-            "FROM quarantine", timeout=10)
-
-        if result:
-            for line in result.splitlines():
-                parts = line.split('\t')
-                if len(parts) >= 2:
-                    try:
-                        data["mailcow.quarantine.spam"] = int(parts[0])
-                        data["mailcow.quarantine.virus"] = int(parts[1])
-                    except ValueError:
-                        pass
-
-        # Top Domains
         result = mysql_exec(mysql_container, dbpass,
             "SELECT SUBSTRING_INDEX(rcpt,'@',-1) as domain, COUNT(*) as cnt "
             "FROM quarantine GROUP BY domain ORDER BY cnt DESC LIMIT 5",
@@ -1255,7 +1352,7 @@ def collect_queue_age(postfix_container):
 
 
 def collect_version():
-    """Version/Update-Metriken sammeln."""
+    """Version/Update-Metriken — nutzt offizielles update.sh --check-tags (#opt-update)."""
     data = {
         "mailcow.version.current": "unknown",
         "mailcow.version.branch": "unknown",
@@ -1269,36 +1366,62 @@ def collect_version():
 
     git = f"cd {MAILCOW_DIR} &&"
 
-    data["mailcow.version.current"] = run(
-        f"{git} git describe --tags 2>/dev/null || git log -1 --format='%H' 2>/dev/null | cut -c1-8",
-        default="unknown")
-    data["mailcow.version.branch"] = run(f"{git} git rev-parse --abbrev-ref HEAD 2>/dev/null", default="unknown")
-    data["mailcow.version.commit"] = run(f"{git} git rev-parse --short HEAD 2>/dev/null", default="unknown")
-    data["mailcow.version.date"] = run(f"{git} git log -1 --format=%cd --date=short 2>/dev/null", default="unknown")
+    # Git-Infos gebatcht in einem Aufruf
+    batch = run(f"""{git} echo "===TAG===" && \
+        (git describe --tags 2>/dev/null || git log -1 --format='%H' 2>/dev/null | cut -c1-8) && \
+        echo "===BRANCH===" && git rev-parse --abbrev-ref HEAD 2>/dev/null && \
+        echo "===COMMIT===" && git rev-parse --short HEAD 2>/dev/null && \
+        echo "===DATE===" && git log -1 --format=%cd --date=short 2>/dev/null && \
+        echo "===LATEST===" && git fetch --tags origin 2>/dev/null && \
+        git describe --tags $(git rev-list --tags --max-count=1) 2>/dev/null && \
+        echo "===BEHIND===" && git rev-list --count HEAD..@{{u}} 2>/dev/null""",
+        timeout=20)
 
-    # Fetch + latest
-    run(f"{git} git fetch --tags origin 2>/dev/null", timeout=15)
-    data["mailcow.version.latest"] = run(
-        f"{git} git describe --tags $(git rev-list --tags --max-count=1) 2>/dev/null",
-        default="unknown")
+    if batch:
+        sections = {}
+        current = None
+        for line in batch.splitlines():
+            if line.startswith("===") and line.endswith("==="):
+                current = line.strip("=")
+                sections[current] = []
+            elif current:
+                sections[current].append(line)
 
-    # Update check
-    head = run(f"{git} git rev-parse HEAD 2>/dev/null")
-    upstream = run(f"{git} git rev-parse @{{u}} 2>/dev/null")
-    if head and upstream and head != upstream:
-        data["mailcow.updates.available"] = 1
+        if sections.get("TAG"):
+            data["mailcow.version.current"] = sections["TAG"][0].strip()
+        if sections.get("BRANCH"):
+            data["mailcow.version.branch"] = sections["BRANCH"][0].strip()
+        if sections.get("COMMIT"):
+            data["mailcow.version.commit"] = sections["COMMIT"][0].strip()
+        if sections.get("DATE"):
+            data["mailcow.version.date"] = sections["DATE"][0].strip()
+        if sections.get("LATEST"):
+            data["mailcow.version.latest"] = sections["LATEST"][0].strip()
+        if sections.get("BEHIND"):
+            try:
+                data["mailcow.updates.commits.behind"] = int(sections["BEHIND"][0].strip())
+            except (ValueError, IndexError):
+                pass
 
-    data["mailcow.updates.commits.behind"] = run_int(
-        f"{git} git rev-list --count HEAD..@{{u}} 2>/dev/null")
-
-    if os.path.isfile(os.path.join(MAILCOW_DIR, "update.sh")):
+    # Offizieller Mailcow Update-Check (update.sh --check-tags)
+    update_sh = os.path.join(MAILCOW_DIR, "update.sh")
+    if os.path.isfile(update_sh):
         data["mailcow.update.script.exists"] = 1
+        try:
+            r = subprocess.run(
+                f"cd {MAILCOW_DIR} && ./update.sh --check-tags",
+                shell=True, capture_output=True, text=True, timeout=30)
+            # Exit 0 = neues Tag verfügbar, Exit 3 = kein Update
+            if r.returncode == 0:
+                data["mailcow.updates.available"] = 1
+        except (subprocess.TimeoutExpired, Exception):
+            pass
 
     return data
 
 
 def collect_meta():
-    """Agent/Meta-Metriken sammeln."""
+    """Agent/Meta-Metriken — 1 shell-Aufruf statt 3 (#opt9)."""
     data = {
         "zabbix.agent.running": 0,
         "zabbix.agent.uptime": 0,
@@ -1310,45 +1433,66 @@ def collect_meta():
         "zabbix.agent.unsafe": 0,
     }
 
-    # Agent running
-    data["zabbix.agent.running"] = 1 if run("systemctl is-active zabbix-agent2 2>/dev/null") == "active" else 0
+    # Batch: status + uptime-timestamp + restarts + log
+    batch = run("sh -c '"
+        'echo ===STATUS=== && systemctl is-active zabbix-agent2 2>/dev/null; '
+        'echo ===TS=== && systemctl show zabbix-agent2 --property=ActiveEnterTimestamp --value 2>/dev/null; '
+        'echo ===RESTARTS=== && systemctl show zabbix-agent2 --property=NRestarts --value 2>/dev/null; '
+        "echo ===LOG===; tail -100 /var/log/zabbix/zabbix_agent2.log 2>/dev/null; exit 0"
+        "'", timeout=10)
 
-    # Uptime
-    ts = run("systemctl show zabbix-agent2 --property=ActiveEnterTimestamp --value 2>/dev/null")
-    if ts and ts != "0":
-        start = run_int(f'date -d "{ts}" +%s 2>/dev/null')
-        if start > 0:
-            data["zabbix.agent.uptime"] = now() - start
+    if batch:
+        sections = {}
+        current = None
+        for line in batch.splitlines():
+            if line.startswith("===") and line.endswith("==="):
+                current = line.strip("=")
+                sections[current] = []
+            elif current:
+                sections[current].append(line)
 
-    # Restarts
-    data["zabbix.agent.restarts"] = run_int(
-        "systemctl show zabbix-agent2 --property=NRestarts --value 2>/dev/null")
+        # Agent running
+        status_lines = sections.get("STATUS", [])
+        if status_lines and status_lines[0].strip() == "active":
+            data["zabbix.agent.running"] = 1
 
-    # Config count
+        # Uptime
+        ts_lines = sections.get("TS", [])
+        if ts_lines and ts_lines[0].strip() and ts_lines[0].strip() != "0":
+            start = run_int(f'date -d "{ts_lines[0].strip()}" +%s 2>/dev/null')
+            if start > 0:
+                data["zabbix.agent.uptime"] = now() - start
+
+        # Restarts
+        restarts_lines = sections.get("RESTARTS", [])
+        if restarts_lines:
+            try:
+                data["zabbix.agent.restarts"] = int(restarts_lines[0].strip())
+            except (ValueError, IndexError):
+                pass
+
+        # Log analysis
+        log_lines = sections.get("LOG", [])
+        if log_lines:
+            data["zabbix.agent.log.errors"] = sum(
+                1 for l in log_lines if "error" in l.lower())
+            data["zabbix.agent.log.warnings"] = sum(
+                1 for l in log_lines if "warning" in l.lower())
+
+    # Config count (filesystem, kein Shell-Aufruf)
     configs = list(Path("/etc/zabbix/zabbix_agent2.d/").glob("mailcow*.conf"))
     data["zabbix.agent.configs"] = len(configs)
 
-    # Log analysis
-    log_content = run("tail -100 /var/log/zabbix/zabbix_agent2.log 2>/dev/null")
-    if log_content:
-        data["zabbix.agent.log.errors"] = sum(
-            1 for l in log_content.splitlines() if "error" in l.lower())
-        data["zabbix.agent.log.warnings"] = sum(
-            1 for l in log_content.splitlines() if "warning" in l.lower())
-
-    # Config values
-    agent_conf = ""
+    # Config values (Datei lesen, kein Shell-Aufruf)
     try:
         with open("/etc/zabbix/zabbix_agent2.conf") as f:
-            agent_conf = f.read()
+            for line in f:
+                if line.startswith("Timeout="):
+                    data["zabbix.agent.timeout"] = int(line.split("=")[1].strip())
+                elif line.startswith("UnsafeUserParameters="):
+                    data["zabbix.agent.unsafe"] = int(line.split("=")[1].strip())
     except FileNotFoundError:
         pass
-
-    for line in agent_conf.splitlines():
-        if line.startswith("Timeout="):
-            data["zabbix.agent.timeout"] = int(line.split("=")[1].strip())
-        elif line.startswith("UnsafeUserParameters="):
-            data["zabbix.agent.unsafe"] = int(line.split("=")[1].strip())
 
     return data
 
@@ -1723,7 +1867,7 @@ def _parse_top_list(lines, count=5):
     """Parse 'count  address' Listen aus pflogsumm."""
     entries = []
     for line in lines:
-        # "     72   smmsp@cow.fox1.de"
+        # "     72   smmsp@mail.example.com"
         m = re.match(r'\s*(\d+)\s+(\S+)', line)
         if m:
             entries.append(f'{m.group(2)}:{m.group(1)}')
@@ -1735,7 +1879,7 @@ def _parse_domain_list(lines, count=5):
     entries = []
     for line in lines:
         # " 19     1452k       0     1.6 s    3.6 s  linuser.de"
-        # oder " 74   161382   cow.fox1.de"
+        # oder " 74   161382   mail.example.com"
         parts = line.split()
         if len(parts) >= 2:
             # Domain ist letztes Feld

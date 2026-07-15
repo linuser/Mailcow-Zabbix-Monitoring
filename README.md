@@ -111,6 +111,32 @@ systemctl start mailcow-monitor.service    # fresh JSON
 systemctl restart zabbix-agent2             # force re-check
 ```
 
+## Update
+
+To update an existing installation to a newer version:
+
+```bash
+cd ~/Mailcow-Zabbix-Monitoring
+git pull
+sudo ./install.sh
+```
+
+Then re-import the template in Zabbix:
+1. **Data collection → Templates → Import**
+2. Select `templates/mailcow-complete-monitoring.yaml`
+3. Check **☑ Update existing** — this updates items, triggers and dashboards in-place without losing history
+4. Restart the agent:
+
+```bash
+systemctl start mailcow-monitor.service
+systemctl restart zabbix-agent2
+```
+
+If items show "Not supported" after the update:
+1. **Configuration → Hosts → your host → Items**
+2. Filter by "Not supported"
+3. Select all → **Enable**
+
 ## File Structure
 
 ```
@@ -136,7 +162,7 @@ mailcow-monitoring/
 │   └── postfix_log_analysis.sh       # Postfix logs + Postscreen
 ├── mailcow-monitor.service           # systemd oneshot
 ├── mailcow-monitor.timer             # systemd timer (60s)
-├── LICENSE                           # GPLv3
+├── LICENSE                           # AGPLv3
 ├── CHANGELOG.md
 ├── MAILCOW-MONITORING-DOKU.md        # Detailed docs (German)
 ├── README.md                         # This file
@@ -151,7 +177,7 @@ sudo ./uninstall.sh
 
 ## License
 
-GPLv3 — code must remain open source and the original author must be credited.
+AGPLv3 — code must remain open source and the original author must be credited.
 See [LICENSE](LICENSE) for details.
 
 **© 2026 Alexander Fox | PlaNet Fox** — Created with Open Source and ❤

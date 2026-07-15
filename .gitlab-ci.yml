@@ -1,0 +1,73 @@
+# CI für planet_fox/mailcow-zabbix-monitoring – rein statische Checks, kein Deploy.
+# Braucht nur einen normalen Docker-Runner (kein privileged/DinD).
+
+stages:
+  - check
+
+shellcheck:
+  stage: check
+  image: alpine:3
+  before_script:
+    - apk add --no-cache shellcheck
+  script:
+    - |
+      set -eu
+      count=$(find . -type f -name '*.sh' -not -path './.git/*' | wc -l)
+      if [ "$count" -eq 0 ]; then
+        echo "Keine .sh-Dateien gefunden – übersprungen."
+        exit 0
+      fi
+      echo "Prüfe $count Shell-Skript(e), Mindeststufe: eror"
+      find . -type f -name '*.sh' -not -path './.git/*' \
+        -exec shellcheck --severity=error --format=gcc {} +
+
+python:
+  stage: check
+  image: python:3-alpine
+  script:
+    - |
+      set -eu
+      count=$(find . -type f -name '*.py' -not -path './.git/*' | wc -l)
+      if [ "$count" -eq 0 ]; then
+        echo "Keine .py-Dateien gefunden – übersprungen."
+        exit 0
+      fi
+      echo "Prüfe $count Python-Datei(en) auf Syntax"
+      python -m compileall -q -x '\.git' .
+
+data:
+  stage: check
+  image: python:3-alpine
+  before_script:
+    - pip install --no-cache-dir --quiet pyyaml
+  script:
+    - |
+      python - <<'PY'
+      import json, pathlib, sys
+      import yaml
+
+      bad, checked = [], 0
+      for p in sorted(pathlib.Path(".").rglob("*")):
+          if not p.is_file() or ".git" in p.parts:
+              continue
+          if p.suffix == ".json":
+              try:
+                  json.loads(p.read_text(encoding="utf-8"))
+                  checked += 1
+              except Exception as e:
+                  bad.append(f"{p}: {e}")
+          elif p.suffix in (".yaml", ".yml"):
+              # .gitlab-ci.yml kann GitLab-eigene Tags (!reference) enthalten
+              if p.name == ".gitlab-ci.yml":
+                  continue
+              try:
+                  yaml.safe_load(p.read_text(encoding="utf-8"))
+                  checked += 1
+              except Exception as e:
+                  bad.append(f"{p}: {e}")
+
+      print(f"{checked} YAML-/JSON-Datei(en) geprüft")
+      for b in bad:
+          print("FEHLER:", b)
+      sys.exit(1 if bad else 0)
+      PY

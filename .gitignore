@@ -1,0 +1,24 @@
+# --- Secrets / lokale Konfiguration -------------------------------
+.env
+.env.*
+!.env.example
+*.secret
+
+# --- Python -------------------------------------------------------
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Logs / temporäre Ausgaben ------------------------------------
+*.log
+*.tmp
+*.bak
+*.orig
+
+# --- OS / Editor --------------------------------------------------
+.DS_Store
+*.swp
+*~
+
+# Hinweis: bewusst NICHT ignoriert werden *.json, *.yaml und *.conf –
+# Dashboards, Zabbix-Templates und Agent-Konfigurationen gehören ins Repo.
