@@ -70,6 +70,14 @@
   falsely, while the reader's real sentinels (`ZBX_NOTSUPPORTED: …`) could slip
   through. It now matches the exact sentinel prefix and additionally tests
   `mailcow.db.reachable` (247 keys instead of 246).
+- **Template import failed: LLD trigger prototypes used double discovery braces.**
+  Six trigger prototypes referenced their item key with double `{{ }}` —
+  `mailcow.domain.usage_pct[{{#DOMAIN}}]` and likewise for `{{#MAILBOX}}`,
+  `{{#SYNCJOB_ID}}` and `{{#CONTAINER}}` — while the item prototypes correctly use
+  single `{#…}`. Zabbix rejected the import with *"Incorrect item key … provided
+  for trigger expression"*. All six now use single braces; every trigger reference
+  in the template was re-validated to resolve to an existing item key. (Carried
+  over from the v1.2.1 template.)
 
 ### Changed — robustness
 - Timeouts added to the `dig` calls in `check_ptr.sh` and to the `docker exec` log
