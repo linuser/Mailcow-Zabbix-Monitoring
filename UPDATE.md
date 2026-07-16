@@ -1,100 +1,103 @@
-# Update auf v1.2
+# Update to v1.2
 
-Dieses Paket aktualisiert eine bestehende Installation. Es besteht aus **zwei
-Teilen**, die man leicht verwechselt:
+This updates an existing installation. It has **two parts** that are easy to
+confuse:
 
-| Teil | Wohin | Womit |
+| Part | Where | How |
 |---|---|---|
-| Collector + Check-Scripts | Mailcow-Server (`/usr/local/bin/`) | `sudo ./update.sh` |
-| Zabbix-Template | Zabbix-Frontend | Import im Browser |
+| Collector + check scripts | Mailcow server (`/usr/local/bin/`) | `sudo ./update.sh` |
+| Zabbix template | Zabbix frontend | import in the browser |
 
-Beide sind nötig. Nur das Template zu importieren behebt nichts, wenn der
-Collector alt ist — und umgekehrt.
+Both are required. Importing only the template fixes nothing if the collector is
+outdated — and vice versa.
+
+Deutsche Fassung: [UPDATE.de.md](UPDATE.de.md)
 
 ---
 
-## 1. Mailcow-Server
+## 1. Mailcow server
 
 ```bash
 unzip mailcow-zabbix-v1.2.zip
 cd mailcow-zabbix-v1.2
-sudo ./update.sh --check     # zeigt an, was passieren wuerde
-sudo ./update.sh             # fuehrt es aus
+sudo ./update.sh --check     # shows what would happen
+sudo ./update.sh             # does it
 ```
 
-`update.sh` legt vorher ein Backup unter `/var/backups/mailcow-zabbix/<datum>/`
-an. Zurück geht es mit `sudo ./update.sh --rollback`.
+`update.sh` backs up to `/var/backups/mailcow-zabbix/<date>/` first. Roll back
+with `sudo ./update.sh --rollback`.
 
-Der Updater prüft am Ende selbst nach, ob die Werte plausibel sind, u. a.:
+It waits for a genuinely fresh JSON and then verifies the values itself:
 
 ```
-OK    246 Metriken in der JSON
-OK    Postfix laeuft: 1
+OK    246 metrics in the JSON
+OK    Postfix running: 1
 OK    Rspamd scanned: 73890
 OK    RBL detail: clean
 ```
 
-Steht dort `Postfix laeuft: 0` **und** `Rspamd scanned: 0`, lief noch der alte
-Collector — dann prüfen:
+If you see `Postfix running: 0` **and** `Rspamd scanned: 0`, the old collector is
+still in place — check:
 
 ```bash
-md5sum /usr/local/bin/mailcow-collector.py    # muss 96548338af442ecdd755a9b19c098129 sein
+md5sum /usr/local/bin/mailcow-collector.py
 ```
 
-## 2. Zabbix-Frontend
+## 2. Zabbix frontend
 
-*Data collection → Templates → Import*, Datei
+*Data collection → Templates → Import*, file
 `templates/mailcow-complete-monitoring.yaml`.
 
-**Wichtig — Import-Optionen:** bei **allen** Objekttypen sowohl **Create new**
-als auch **Update existing** anhaken. `Delete missing` bleibt aus.
+**Import options matter:** tick both **Create new** and **Update existing** for
+**all** object types. Leave `Delete missing` off.
 
-Mit nur „Update existing" legt Zabbix fehlende Objekte **nicht** an und meldet
-trotzdem „Imported successfully". Genau so entstand der Zustand, in dem 0 von 71
-Triggern existierten.
+With only "Update existing" Zabbix does **not** create missing objects and still
+reports "Imported successfully". That is how installations ended up with 0 of 71
+triggers.
 
-Kontrolle danach in der Template-Zeile:
+Check the template row afterwards:
 
 ```
 Items 246 | Triggers 63 | Dashboards 19 | Discovery 4
 ```
 
-Steht bei *Triggers* keine Zahl, war „Create new" nicht gesetzt.
+No number next to *Triggers* means "Create new" was not ticked.
 
-### Wo sind die Dashboards?
+### Where are the dashboards?
 
-Template-Dashboards erscheinen **nicht** unter *Monitoring → Dashboards* — dort
-stehen nur globale Dashboards. Sie hängen am Host:
+Template dashboards do **not** appear under *Monitoring → Dashboards* — that page
+only lists global dashboards. They belong to the host:
 
-*Monitoring → Hosts* → Zeile des Hosts → Link **Dashboards** → „01 - Postfix"
+*Monitoring → Hosts* → the host's row → **Dashboards** link → "01 - Postfix"
 
-Öffnet man sie stattdessen unter *Data collection → Templates → Dashboards*,
-sind sie leer: dort fehlt der Host-Bezug, es gibt nichts zu zeichnen.
+Opening them under *Data collection → Templates → Dashboards* shows them empty:
+there is no host context there, so there is nothing to plot.
 
 ---
 
-## Voraussetzung: ServerActive (häufigste Fehlerursache)
+## Prerequisite: ServerActive (most common cause of "no data")
 
-**Alle 246 Items sind aktive Agent-Checks.** Aktive Checks holt sich der Agent
-selbst — von der Adresse in `ServerActive`. `Server=` regelt nur passive
-Abfragen und reicht **nicht**.
+**All 246 items are active agent checks.** The agent fetches them itself from the
+address in `ServerActive`. `Server=` only governs passive queries and is **not**
+sufficient.
 
 In `/etc/zabbix/zabbix_agent2.conf`:
 
 ```ini
-Server=zabbix.example.com,127.0.0.1     # passiv (u.a. fuer test-complete.sh)
-ServerActive=zabbix.example.com         # AKTIV - ohne das: keine Daten
-Hostname=mail.example.com               # exakt der Host-Name in Zabbix
+Server=zabbix.example.com,127.0.0.1     # passive (used by test-complete.sh)
+ServerActive=zabbix.example.com         # ACTIVE — without this: no data at all
+Hostname=mail.example.com               # exactly the host name in Zabbix
 ```
 
-Danach `systemctl restart zabbix-agent2`.
+Then `systemctl restart zabbix-agent2`.
 
-Fehlt `ServerActive` oder zeigt es auf `127.0.0.1`, während der Zabbix-Server
-woanders läuft, liefert **kein einziges Item** Daten — Items und Trigger sind im
-Frontend sichtbar, Graphen bleiben leer. `update.sh` prüft das und warnt.
+If `ServerActive` is missing, or points at `127.0.0.1` while your Zabbix server
+runs elsewhere, **not a single item** collects data — items and triggers are
+visible in the frontend, graphs stay empty. `install.sh` and `update.sh` both
+check this and warn.
 
-Jeder Parameter darf nur **einmal** unkommentiert vorkommen; sonst startet der
-Agent nicht. Vor dem Neustart testen:
+Each parameter may appear **once** uncommented, otherwise the agent refuses to
+start. Validate before restarting:
 
 ```bash
 zabbix_agent2 -T -c /etc/zabbix/zabbix_agent2.conf
@@ -102,53 +105,52 @@ zabbix_agent2 -T -c /etc/zabbix/zabbix_agent2.conf
 
 ---
 
-## RBL-Prüfung auf Cloud-Hosts
+## RBL checks on cloud hosts
 
-Spamhaus beantwortet Anfragen von Rechenzentrums- und Public-Resolvern
-(Hetzner, DigitalOcean, OVH, Google DNS, Cloudflare) nicht mit einem Ergebnis,
-sondern mit einem Fehlercode aus `127.255.255.0/24`:
+Spamhaus does not answer queries coming from datacenter or public resolvers
+(Hetzner, DigitalOcean, OVH, Google DNS, Cloudflare) with a result, but with an
+error code from `127.255.255.0/24`:
 
-| Antwort | Bedeutung |
+| Response | Meaning |
 |---|---|
-| `127.0.0.2` / `.3` | SBL — echte Listung |
-| `127.0.0.4`–`.7` | XBL — echte Listung |
-| `127.0.0.10` / `.11` | PBL — echte Listung |
-| `127.255.255.252` | Fehler: ungültige Abfrage |
-| `127.255.255.254` | Fehler: Abfrage über Public Resolver |
-| `127.255.255.255` | Fehler: Rate Limit |
+| `127.0.0.2` / `.3` | SBL — real listing |
+| `127.0.0.4`–`.7` | XBL — real listing |
+| `127.0.0.10` / `.11` | PBL — real listing |
+| `127.255.255.252` | error: invalid query |
+| `127.255.255.254` | error: query via public resolver |
+| `127.255.255.255` | error: rate limited |
 
-Bis v1.1 zählte jede nicht-leere Antwort als Listung — auf einem Hetzner-Host
-also ein dauerhafter **Disaster-Fehlalarm**. Seit v1.2 zählen nur `127.0.0.x`;
-Fehlercodes erscheinen als `error_resolver_blocked:<rbl>` im Detail-Item, ohne
-Alarm.
+Up to v1.1 every non-empty answer counted as a listing — on a Hetzner host that
+meant a permanent **Disaster** false alarm. Since v1.2 only `127.0.0.x` counts;
+error codes surface as `error_resolver_blocked:<rbl>` in the detail item, without
+raising an alarm.
 
-Damit ist der Fehlalarm weg — aber die Prüfung liefert auf solchen Hosts auch
-kein echtes Ergebnis. Wer eines will, betreibt einen eigenen rekursiven Resolver
-(z. B. unbound) und setzt in `check_rbl.sh`:
+That removes the false alarm, but the check still yields no real answer on such
+hosts. For a usable result, run your own recursive resolver (e.g. unbound) and
+set in `check_rbl.sh`:
 
 ```bash
 RBL_RESOLVER=127.0.0.1
 ```
 
-oder verwendet einen Spamhaus-DQS-Key.
+or use a Spamhaus DQS key.
 
 ---
 
-## Was `test-complete.sh` nicht prüft
+## What `test-complete.sh` does not check
 
-`test-complete.sh` fragt die UserParameter mit `zabbix_get -s 127.0.0.1` ab —
-das sind **passive** Abfragen. Es meldet also 246/246 OK, obwohl das Template
-über aktive Checks nichts bekommt. Es prüft ebenfalls nicht, ob Trigger
-existieren oder Dashboards Daten zeigen. Ein bestandener Test ist deshalb kein
-Beleg dafür, dass das Monitoring arbeitet — die Kontrolle im Frontend
-(*Latest data*, Trigger-Zahl) bleibt nötig.
+`test-complete.sh` queries the UserParameters with `zabbix_get -s 127.0.0.1` —
+those are **passive** queries. It therefore reports 246/246 OK even when the
+template receives nothing over active checks. It also does not verify that
+triggers exist or that dashboards show data. A passing test is not proof that
+monitoring works — always confirm in the frontend (*Latest data*, trigger count).
 
 ---
 
-## Enthaltene Fixes
+## Included fixes
 
-Siehe `CHANGELOG.md`.
+See `CHANGELOG.md`.
 
-## Lizenz
+## License
 
-AGPL-3.0-or-later, passend zu Zabbix seit 7.0 (vorher GPLv2). Siehe `LICENSE`.
+AGPL-3.0-or-later, matching Zabbix since 7.0 (GPLv2 before that). See `LICENSE`.

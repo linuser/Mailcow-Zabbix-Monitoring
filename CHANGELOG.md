@@ -89,6 +89,28 @@
 - `docker ps --filter name=postfix` matcht seit neueren Mailcow-Versionen auch
   `postfix-tlspol-mailcow-1`. Aktuell greift die Auswahl zufaellig richtig;
   ein exaktes Matching waere robuster.
+### Bugfix: v1.2-Fixes erreichten Neuinstallationen nicht
+- `ServerActive` wurde nur im Update-Pfad geprueft (`update.sh`) und nur in
+  `UPDATE.md` dokumentiert. `install.sh` pruefte es gar nicht, und beide READMEs
+  erklaerten weiterhin ausschliesslich `Server=` - mit der Begruendung, das
+  Test-Script brauche es. Eine Neuinstallation lief damit exakt in den Fehler,
+  den v1.2 beheben sollte: kein `ServerActive` -> keines der 246 aktiven Items
+  sammelt Daten, ohne Fehlermeldung.
+  - `install.sh` prueft jetzt `ServerActive`/`Hostname` (fehlend, localhost,
+    Duplikate) und weist am Ende erneut darauf hin.
+  - Beide READMEs erklaeren aktive Checks, `ServerActive`, `Hostname` und die
+    Einmaligkeit der Parameter; inklusive Hinweis, dass `test-complete.sh`
+    passiv prueft und den Fehler prinzipbedingt nicht sehen kann.
+- `install.sh`: Import-Optionen ergaenzt ("Create new" UND "Update existing") und
+  veraltete Referenz auf Template v1.0 entfernt.
+
+### Bugfix: Template war nicht importierbar
+- Alle 7 Hysterese-Trigger trugen `recovery_expression`, aber kein
+  `recovery_mode: RECOVERY_EXPRESSION`. Zabbix' Default ist `EXPRESSION`, dort
+  muss `recovery_expression` leer sein - der Import brach ab mit
+  `Incorrect value for field "recovery_expression": should be empty.`
+  `tools/fix_triggers.py` prueft und ergaenzt die Regel jetzt.
+
 ### Bugfix: Batching-Optimierung erzeugte stille Nullen
 - **Postfix-PID:** `master.pid` wird von Postfix rechtsbuendig mit Leerzeichen
   aufgefuellt ("                             394"). Die gebuendelte Shell-Variante

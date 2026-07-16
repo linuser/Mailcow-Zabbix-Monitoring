@@ -36,7 +36,7 @@ err()  { echo "  ${RED}FEHLER${NC} $*"; }
 FAIL=0
 
 if [ "$(id -u)" -ne 0 ]; then
-    err "Bitte als root ausfuehren (sudo ./update.sh)"
+    err "Please run as root (sudo ./update.sh)"
     exit 1
 fi
 
@@ -44,33 +44,33 @@ fi
 if [ $ROLLBACK -eq 1 ]; then
     LAST=$(ls -1d "$BACKUP_ROOT"/* 2>/dev/null | sort | tail -1)
     if [ -z "$LAST" ]; then
-        err "Kein Backup unter $BACKUP_ROOT gefunden"
+        err "No backup found in $BACKUP_ROOT"
         exit 1
     fi
-    echo "Rollback aus: $LAST"
+    echo "Rollback from: $LAST"
     cp -a "$LAST"/*.sh "$LAST"/*.py "$BIN_DIR"/ 2>/dev/null
     systemctl restart mailcow-monitor.timer 2>/dev/null
-    ok "Scripts zurueckgespielt. Template im Frontend ggf. separat zuruecksetzen."
+    ok "Scripts restored. Reset the template in the frontend separately if needed."
     exit 0
 fi
 
 echo "=============================================="
 echo " Mailcow-Zabbix-Monitoring  Update v1.2"
-[ $CHECK_ONLY -eq 1 ] && echo " MODUS: --check (es wird nichts geaendert)"
+[ $CHECK_ONLY -eq 1 ] && echo " MODE: --check (nothing will be changed)"
 echo "=============================================="
 echo
 
 # ------------------------------------------------- 1. Voraussetzungen
-echo "[1/6] Voraussetzungen"
-command -v docker >/dev/null 2>&1 && ok "docker gefunden" || { err "docker fehlt"; FAIL=1; }
-command -v python3 >/dev/null 2>&1 && ok "python3 gefunden" || { err "python3 fehlt"; FAIL=1; }
+echo "[1/6] Prerequisites"
+command -v docker >/dev/null 2>&1 && ok "docker found" || { err "docker missing"; FAIL=1; }
+command -v python3 >/dev/null 2>&1 && ok "python3 found" || { err "python3 missing"; FAIL=1; }
 if docker ps --format '{{.Names}}' 2>/dev/null | grep -q 'postfix-mailcow'; then
-    ok "Mailcow-Container laufen"
+    ok "Mailcow containers running"
 else
-    err "Kein postfix-mailcow-Container gefunden - laeuft Mailcow?"
+    err "No postfix-mailcow container found - is Mailcow running?"
     FAIL=1
 fi
-[ $FAIL -eq 1 ] && { echo; err "Abbruch."; exit 1; }
+[ $FAIL -eq 1 ] && { echo; err "Aborted."; exit 1; }
 echo
 
 # ------------------------------------------------- 2. Agent-Konfiguration
@@ -78,29 +78,29 @@ echo
 # ALLE Items sind aktive Checks und brauchen ServerActive. Server= allein
 # genuegt NICHT. Wir aendern hier nichts automatisch (eine kaputte Config
 # verhindert den Agent-Start), sondern melden nur.
-echo "[2/6] Zabbix-Agent-Konfiguration"
+echo "[2/6] Zabbix agent configuration"
 if [ -f "$AGENT_CONF" ]; then
     SA=$(grep -E '^ServerActive=' "$AGENT_CONF" | head -1 | cut -d= -f2-)
     HN=$(grep -E '^Hostname=' "$AGENT_CONF" | head -1 | cut -d= -f2-)
     SA_COUNT=$(grep -cE '^ServerActive=' "$AGENT_CONF")
     if [ -z "$SA" ]; then
-        err "ServerActive fehlt -> KEIN einziges Item wird Daten liefern!"
-        echo "        Eintragen: ServerActive=<ip-oder-name-des-zabbix-servers>"
+        err "ServerActive missing -> NOT a single item will collect data!"
+        echo "        Add: ServerActive=<ip-or-name-of-your-zabbix-server>"
         FAIL=1
     elif echo "$SA" | grep -qE '^(127\.0\.0\.1|localhost)$'; then
-        warn "ServerActive=$SA zeigt auf localhost."
-        echo "        Nur korrekt, wenn der Zabbix-Server auf DIESEM Host laeuft."
+        warn "ServerActive=$SA points at localhost."
+        echo "        Only correct if the Zabbix server runs on THIS host."
     else
         ok "ServerActive=$SA"
     fi
-    [ "$SA_COUNT" -gt 1 ] && err "ServerActive $SA_COUNT-mal definiert - Agent startet damit nicht"
+    [ "$SA_COUNT" -gt 1 ] && err "ServerActive defined $SA_COUNT times - the agent will not start"
     if [ -z "$HN" ]; then
-        warn "Hostname nicht gesetzt (muss exakt dem Host-Namen in Zabbix entsprechen)"
+        warn "Hostname not set (must exactly match the host name in Zabbix)"
     else
         ok "Hostname=$HN"
     fi
 else
-    warn "$AGENT_CONF nicht gefunden - Agent 2 installiert?"
+    warn "$AGENT_CONF not found - is Agent 2 installed?"
 fi
 echo
 
@@ -115,9 +115,9 @@ if [ $CHECK_ONLY -eq 0 ]; then
              "$BIN_DIR"/dovecot_check.sh "$BIN_DIR"/postfix_*.sh "$BIN_DIR"/sync_jobs_check.sh; do
         [ -f "$f" ] && { cp -a "$f" "$BACKUP/"; N=$((N+1)); }
     done
-    ok "$N Dateien gesichert -> $BACKUP"
+    ok "$N files backed up -> $BACKUP"
 else
-    ok "(check) Backup wuerde nach $BACKUP gehen"
+    ok "(check) backup would go to $BACKUP"
 fi
 echo
 
@@ -128,76 +128,98 @@ for f in "$SRC"/scripts/*; do
     NAME=$(basename "$f")
     TARGET="$BIN_DIR/$NAME"
     if [ -f "$TARGET" ] && cmp -s "$f" "$TARGET"; then
-        echo "        unveraendert: $NAME"
+        echo "        unchanged: $NAME"
         continue
     fi
     if [ $CHECK_ONLY -eq 1 ]; then
-        warn "(check) wuerde ersetzen: $NAME"
+        warn "(check) would replace: $NAME"
     else
-        install -o root -g root -m 0755 "$f" "$TARGET" && ok "aktualisiert: $NAME"
+        install -o root -g root -m 0755 "$f" "$TARGET" && ok "updated: $NAME"
     fi
     UPD=$((UPD+1))
 done
-[ $UPD -eq 0 ] && ok "Alle Scripts bereits aktuell"
+[ $UPD -eq 0 ] && ok "All scripts already up to date"
 echo
 
 # ------------------------------------------------- 5. Caches + Dienst
-echo "[5/6] Caches und Dienst"
+echo "[5/6] Caches and service"
 if [ $CHECK_ONLY -eq 0 ]; then
     # RBL-Cache muss weg, sonst liefert der alte Fehlalarm noch bis zu 30 Min.
     rm -f /var/tmp/rbl_check.cache /var/tmp/rbl_check_detail.cache
-    ok "RBL-Cache geleert"
+    ok "RBL cache cleared"
     systemctl daemon-reload 2>/dev/null
+    START_TS=$(date +%s)
     if systemctl list-unit-files 2>/dev/null | grep -q mailcow-monitor.timer; then
-        systemctl restart mailcow-monitor.timer && ok "Timer neu gestartet"
+        systemctl restart mailcow-monitor.timer && ok "Timer restarted"
         systemctl start mailcow-monitor.service 2>/dev/null
-        ok "Collector-Lauf angestossen"
+        ok "Collector run triggered"
     else
-        warn "mailcow-monitor.timer nicht installiert (install.sh noetig?)"
+        warn "mailcow-monitor.timer not installed (run install.sh?)"
     fi
-    sleep 3
+    # Auf eine WIRKLICH neue JSON warten statt fest zu schlafen. Der Collector
+    # braucht ~10-15s; ein `sleep 3` liess die Verifikation auf den Werten des
+    # vorherigen Laufs pruefen - also auf Daten der noch nicht ersetzten
+    # Scripts. Das kann ein falsches OK erzeugen.
+    printf "        waiting for fresh data "
+    FRESH=0
+    for _ in $(seq 1 40); do
+        if [ -f "$JSON" ] && [ "$(stat -c %Y "$JSON" 2>/dev/null || echo 0)" -ge "$START_TS" ]; then
+            FRESH=1
+            break
+        fi
+        printf "."
+        sleep 1
+    done
+    echo
+    if [ $FRESH -eq 1 ]; then
+        ok "JSON rewritten"
+    else
+        warn "Collector did not write a new JSON within 40s."
+        echo "        The values below may still be from the previous run."
+        echo "        Check: systemctl status mailcow-monitor.service"
+    fi
 else
-    ok "(check) Cache/Dienst unveraendert"
+    ok "(check) cache/service unchanged"
 fi
 echo
 
 # ------------------------------------------------- 6. Verifikation
-echo "[6/6] Verifikation"
+echo "[6/6] Verification"
 if [ -f "$JSON" ]; then
     AGE=$(( $(date +%s) - $(stat -c %Y "$JSON") ))
-    [ $AGE -lt 180 ] && ok "JSON ist ${AGE}s alt" || warn "JSON ist ${AGE}s alt - laeuft der Timer?"
+    [ $AGE -lt 180 ] && ok "JSON is ${AGE}s old" || warn "JSON is ${AGE}s old - is the timer running?"
     python3 - "$JSON" <<'EOF'
 import json, sys
 try:
     d = json.load(open(sys.argv[1]))
 except Exception as e:
-    print("  \033[0;31mFEHLER\033[0m JSON nicht lesbar:", e); sys.exit(0)
+    print("  \033[0;31mERROR\033[0m JSON not readable:", e); sys.exit(0)
 
 def show(label, key, bad=None):
     v = d.get(key, "<fehlt>")
     flag = "\033[0;33mWARN\033[0m  " if (bad is not None and v == bad) else "\033[0;32mOK\033[0m    "
     print(f"  {flag}{label}: {v}")
 
-print(f"  \033[0;32mOK\033[0m    {len(d)} Metriken in der JSON")
-show("Postfix laeuft", "postfix.process.running", bad=0)
+print(f"  \033[0;32mOK\033[0m    {len(d)} metrics in the JSON")
+show("Postfix running", "postfix.process.running", bad=0)
 show("Rspamd scanned", "mailcow.rspamd.scanned", bad=0)
-show("RBL gelistet", "mailcow.security.rbl.listed")
+show("RBL listed", "mailcow.security.rbl.listed")
 show("RBL detail", "mailcow.security.rbl.detail")
-show("Collector-Fehler", "mailcow.collector.errors")
+show("Collector errors", "mailcow.collector.errors")
 EOF
 else
-    err "$JSON existiert nicht - Collector lief nie erfolgreich"
+    err "$JSON does not exist - the collector never ran successfully"
 fi
 echo
 echo "=============================================="
-echo " Host-Seite fertig."
+echo " Host side done."
 echo
-echo " NAECHSTER SCHRITT (Zabbix-Frontend, nicht automatisierbar):"
+echo " NEXT STEP (Zabbix frontend, cannot be automated):"
 echo "   Data collection -> Templates -> Import"
-echo "   Datei: templates/mailcow-complete-monitoring.yaml"
-echo "   WICHTIG: 'Create new' UND 'Update existing' anhaken,"
-echo "            'Delete missing' NICHT."
-echo "   Danach muss beim Template stehen: Items 246 | Triggers 63 | Dashboards 19"
+echo "   File: templates/mailcow-complete-monitoring.yaml"
+echo "   IMPORTANT: tick 'Create new' AND 'Update existing',"
+echo "            NOT 'Delete missing'."
+echo "   The template should then show: Items 246 | Triggers 63 | Dashboards 19"
 echo
-echo " Details und Fehlersuche: UPDATE.md"
+echo " Details and troubleshooting: UPDATE.md"
 echo "=============================================="

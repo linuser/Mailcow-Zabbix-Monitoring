@@ -67,13 +67,37 @@ Checks SPF, DKIM, DMARC plus DANE/TLSA, MTA-STS, TLS-RPT and BIMI. Trigger alert
 
 ### Zabbix Agent Configuration
 
-Make sure your Zabbix Agent 2 config (`/etc/zabbix/zabbix_agent2.conf`) allows local queries:
+**All 246 items are active agent checks.** The agent fetches them itself from the
+address in `ServerActive` — `Server=` only governs passive queries and is **not**
+sufficient. If `ServerActive` is missing, or points at `127.0.0.1` while your
+Zabbix server runs elsewhere, **not a single item will collect data** — silently.
+Items and triggers show up in the frontend, graphs stay empty.
+
+In `/etc/zabbix/zabbix_agent2.conf`:
 
 ```
-Server=127.0.0.1,<your-zabbix-server-ip>
+Server=<your-zabbix-server-ip>,127.0.0.1   # passive: who may query this agent
+ServerActive=<your-zabbix-server-ip>       # ACTIVE: without this, no data at all
+Hostname=<host name as configured in Zabbix>
 ```
 
-Without `127.0.0.1`, the test script (`test-complete.sh`) and `zabbix_get -s 127.0.0.1` won't work.
+- `127.0.0.1` in `Server=` is only needed so that `test-complete.sh` and
+  `zabbix_get -s 127.0.0.1` work.
+- `Hostname` must match the host's technical name in Zabbix exactly, otherwise
+  the server rejects the active checks.
+- Each parameter may appear **once** uncommented — duplicates prevent the agent
+  from starting.
+
+Validate the config before restarting:
+
+```bash
+zabbix_agent2 -T -c /etc/zabbix/zabbix_agent2.conf
+systemctl restart zabbix-agent2
+```
+
+> Note: `test-complete.sh` queries the UserParameters passively via `zabbix_get`.
+> It therefore reports success even when `ServerActive` is wrong and nothing is
+> actually being collected. Always verify in *Monitoring → Latest data*.
 
 ## Installation
 

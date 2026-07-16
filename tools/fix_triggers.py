@@ -68,6 +68,33 @@ RENAME = {
 }
 
 
+def fix_recovery_mode(tpl):
+    """recovery_expression ist nur mit recovery_mode: RECOVERY_EXPRESSION gueltig.
+
+    Zabbix' Default ist recovery_mode: EXPRESSION - dort MUSS recovery_expression
+    leer sein, sonst bricht der Import ab:
+
+        Incorrect value for field "recovery_expression": should be empty.
+
+    Trigger, die eine recovery_expression tragen, brauchen also zwingend das
+    passende recovery_mode. Fehlt es, wird es hier ergaenzt.
+    """
+    fixed = 0
+    items = list(tpl.get("items", []))
+    for item in items:
+        for tr in item.get("triggers", []):
+            if tr.get("recovery_expression") and \
+                    tr.get("recovery_mode") != "RECOVERY_EXPRESSION":
+                tr["recovery_mode"] = "RECOVERY_EXPRESSION"
+                fixed += 1
+    for tr in tpl.get("triggers", []):
+        if tr.get("recovery_expression") and \
+                tr.get("recovery_mode") != "RECOVERY_EXPRESSION":
+            tr["recovery_mode"] = "RECOVERY_EXPRESSION"
+            fixed += 1
+    return fixed
+
+
 def apply_renames(tpl):
     renamed = 0
     for item in tpl.get("items", []):
@@ -152,6 +179,7 @@ def main():
     out = args.output or args.template
     renamed = apply_renames(tpl)
     dep_added = add_dependencies(tpl)
+    rec_fixed = fix_recovery_mode(tpl)
     text = yaml.safe_dump(doc, sort_keys=False, default_flow_style=False,
                           allow_unicode=True, width=4096)
     text = re.sub(r"^(\s*)y:", r"\1'y':", text, flags=re.M)
@@ -172,6 +200,7 @@ def main():
     print(f"expression macros in names fixed:        {macro_fixed}")
     print(f"doubled-brace macros fixed:              {brace_fixed}")
     print(f"trigger dependencies added:              {dep_added}")
+    print(f"recovery_mode ergaenzt:                  {rec_fixed}")
     print(f"duplicate trigger names renamed:         {renamed}")
     print("written:", out)
     return 0

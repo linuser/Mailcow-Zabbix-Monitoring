@@ -73,6 +73,7 @@ zabbix_export:
         priority: HIGH
         manual_close: 'YES'
         description: Mail queue has >50 messages for 5 minutes
+        recovery_mode: RECOVERY_EXPRESSION
     - uuid: f57c5993aa4c42d185db01fc1127d96e
       name: 'Mailcow: SMTP connections'
       type: ZABBIX_ACTIVE
@@ -594,6 +595,7 @@ zabbix_export:
         recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.security.fail2ban.banned)<10
         priority: WARNING
         manual_close: 'YES'
+        recovery_mode: RECOVERY_EXPRESSION
     - uuid: abcebbfe9c7f49008be93fc3af839f03
       name: 'Mailcow: Fail2Ban Postfix banned IPs'
       type: ZABBIX_ACTIVE
@@ -945,6 +947,7 @@ zabbix_export:
         recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.root.used)<85
         priority: HIGH
         manual_close: 'YES'
+        recovery_mode: RECOVERY_EXPRESSION
     - uuid: 38640df1d4df466487aa8ea38f63ceac
       name: 'Mailcow: Docker disk total (KB)'
       type: ZABBIX_ACTIVE
@@ -991,6 +994,7 @@ zabbix_export:
         recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.docker.used)<85
         priority: HIGH
         manual_close: 'YES'
+        recovery_mode: RECOVERY_EXPRESSION
     - uuid: ffd793c1ecda489986f81c5c289536b5
       name: 'Mailcow: Log disk total (KB)'
       type: ZABBIX_ACTIVE
@@ -1037,6 +1041,7 @@ zabbix_export:
         recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.log.used)<85
         priority: WARNING
         manual_close: 'YES'
+        recovery_mode: RECOVERY_EXPRESSION
     - uuid: 149f8ce099ad4a6d8ca21dfe7426c2b6
       name: 'Mailcow: Docker top containers'
       type: ZABBIX_ACTIVE
@@ -1111,6 +1116,7 @@ zabbix_export:
         recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.vmail.used)<80
         priority: HIGH
         manual_close: 'YES'
+        recovery_mode: RECOVERY_EXPRESSION
     - uuid: c5ca7de474c6405584508d8344116831
       name: 'Mailcow: vmail maildir size (MB)'
       type: ZABBIX_ACTIVE
@@ -1585,6 +1591,7 @@ zabbix_export:
         recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.age)<24
         priority: HIGH
         manual_close: 'YES'
+        recovery_mode: RECOVERY_EXPRESSION
     - uuid: c80bc00051b546708048009e0cbc6065
       name: 'Mailcow: Backup size (MB)'
       type: ZABBIX_ACTIVE

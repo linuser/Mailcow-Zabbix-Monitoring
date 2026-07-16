@@ -1,11 +1,11 @@
 #!/bin/bash
 # ====================================================================
 #  Mailcow Zabbix Monitoring - Komplett-Test
-#  Version:    1.0
+#  Version:    1.2
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft alle 246 UserParameters via zabbix_get
-#  License:    GPLv3 (see LICENSE)
+#  License:    AGPL-3.0-or-later (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 
@@ -13,7 +13,7 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC
 PASS=0; FAIL=0; WARN=0
 
 echo "============================================="
-echo " Mailcow Monitoring v1.0 - Komplett-Test"
+echo " Mailcow Monitoring v1.2 - Complete test"
 echo " 246 UserParameters / 220 Template Items"
 echo "============================================="
 echo ""
@@ -22,7 +22,7 @@ test_key() {
     local label="$1" key="$2" expect_type="${3:-any}"
     RESULT=$(zabbix_get -s 127.0.0.1 -k "$key" 2>&1)
     if [ $? -ne 0 ] || [ -z "$RESULT" ] || echo "$RESULT" | grep -qi "error\|not supported\|cannot"; then
-        printf "  ${RED}✗${NC} %-45s %s\n" "$label" "${RED}FEHLER: $RESULT${NC}"
+        printf "  ${RED}✗${NC} %-45s %s\n" "$label" "${RED}ERROR: $RESULT${NC}"
         FAIL=$((FAIL + 1)); return 1
     fi
     case "$expect_type" in
@@ -38,15 +38,15 @@ test_key() {
 # [0] PRE-CHECK
 echo -e "${BLUE}=== [0] Zabbix Agent Status ===${NC}\n"
 systemctl is-active --quiet zabbix-agent2 || { echo -e "${RED}✗ Agent läuft NICHT!${NC}"; exit 1; }
-echo -e "  ${GREEN}✓${NC} Zabbix Agent 2 läuft"
-zabbix_get -s 127.0.0.1 -k agent.ping >/dev/null 2>&1 || { echo -e "${RED}✗ Agent antwortet NICHT!${NC}"; exit 1; }
-echo -e "  ${GREEN}✓${NC} Agent antwortet"
+echo -e "  ${GREEN}✓${NC} Zabbix Agent 2 running"
+zabbix_get -s 127.0.0.1 -k agent.ping >/dev/null 2>&1 || { echo -e "${RED}✗ Agent responding NICHT!${NC}"; exit 1; }
+echo -e "  ${GREEN}✓${NC} Agent responding"
 PARAMS=$(grep -c '^UserParameter' /etc/zabbix/zabbix_agent2.d/mailcow*.conf 2>/dev/null)
-echo -e "  ${GREEN}✓${NC} $PARAMS UserParameters geladen"
+echo -e "  ${GREEN}✓${NC} $PARAMS UserParameters loaded"
 if [ -f /var/tmp/mailcow-monitor.json ]; then
     AGE=$(( $(date +%s) - $(stat -c %Y /var/tmp/mailcow-monitor.json) ))
     KEYS=$(python3 -c "import json; print(len(json.load(open('/var/tmp/mailcow-monitor.json'))))" 2>/dev/null)
-    echo -e "  ${GREEN}✓${NC} Collector: $KEYS Keys, ${AGE}s alt"
+    echo -e "  ${GREEN}✓${NC} Collector: $KEYS keys, ${AGE}s old"
 fi
 echo ""
 
@@ -235,30 +235,30 @@ if [ "$BACKUP_EXISTS" = "1" ]; then
     done
     echo ""
 else
-    echo -e "${YELLOW}=== [22] Backup: nicht konfiguriert (übersprungen) ===${NC}\n"
+    echo -e "${YELLOW}=== [22] Backup: not configured (skipped) ===${NC}\n"
 fi
 
 # ERGEBNIS
 TOTAL=$((PASS + FAIL + WARN))
 echo "============================================="
-echo " ERGEBNIS"
+echo " RESULT"
 echo "============================================="
 echo ""
-printf "  ${GREEN}✓ Bestanden:${NC}  %d\n" "$PASS"
-printf "  ${YELLOW}? Warnung:${NC}    %d\n" "$WARN"
-printf "  ${RED}✗ Fehlerhaft:${NC} %d\n" "$FAIL"
+printf "  ${GREEN}✓ Passed:${NC}  %d\n" "$PASS"
+printf "  ${YELLOW}? Warning:${NC}    %d\n" "$WARN"
+printf "  ${RED}✗ Failed:${NC} %d\n" "$FAIL"
 printf "  ─────────────────\n"
-printf "  Gesamt:        %d / 246\n" "$TOTAL"
+printf "  Total:         %d / 246\n" "$TOTAL"
 echo ""
 if [ $FAIL -eq 0 ]; then
     echo -e "${GREEN}============================================="
-    echo -e " ✅ ALLE TESTS BESTANDEN!"
+    echo -e " ✅ ALL TESTS PASSED!"
     echo -e "=============================================${NC}"
 else
     echo -e "${RED}============================================="
-    echo -e " ⚠  $FAIL FEHLER GEFUNDEN!"
+    echo -e " ⚠  $FAIL FAILURES FOUND!"
     echo -e "=============================================${NC}"
-    echo "Tipps: sudo python3 /usr/local/bin/mailcow-collector.py"
+    echo "Hints: sudo python3 /usr/local/bin/mailcow-collector.py"
     echo "       tail -20 /var/log/zabbix/zabbix_agent2.log"
 fi
 echo ""

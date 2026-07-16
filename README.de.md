@@ -25,13 +25,39 @@ systemd timer (60s) → mailcow-collector.py (root)
 
 ### Zabbix Agent Konfiguration
 
-In der Zabbix Agent 2 Konfiguration (`/etc/zabbix/zabbix_agent2.conf`) muss `127.0.0.1` als Server eingetragen sein:
+**Alle 246 Items sind aktive Agent-Checks.** Der Agent holt sie selbst von der
+Adresse in `ServerActive` — `Server=` regelt nur passive Abfragen und genügt
+**nicht**. Fehlt `ServerActive` oder zeigt es auf `127.0.0.1`, während der
+Zabbix-Server woanders läuft, sammelt **kein einziges Item** Daten — ohne
+Fehlermeldung. Items und Trigger sind im Frontend sichtbar, die Graphen bleiben
+leer.
+
+In `/etc/zabbix/zabbix_agent2.conf`:
 
 ```
-Server=127.0.0.1,<dein-zabbix-server-ip>
+Server=<zabbix-server-ip>,127.0.0.1   # passiv: wer diesen Agent abfragen darf
+ServerActive=<zabbix-server-ip>       # AKTIV: ohne das kommen keine Daten
+Hostname=<hostname wie in Zabbix konfiguriert>
 ```
 
-Ohne `127.0.0.1` funktioniert das Test-Script (`test-complete.sh`) und `zabbix_get -s 127.0.0.1` nicht.
+- `127.0.0.1` in `Server=` wird nur gebraucht, damit `test-complete.sh` und
+  `zabbix_get -s 127.0.0.1` funktionieren.
+- `Hostname` muss exakt dem technischen Host-Namen in Zabbix entsprechen, sonst
+  weist der Server die aktiven Checks ab.
+- Jeder Parameter darf nur **einmal** unkommentiert vorkommen — Duplikate
+  verhindern den Agent-Start.
+
+Vor dem Neustart prüfen:
+
+```bash
+zabbix_agent2 -T -c /etc/zabbix/zabbix_agent2.conf
+systemctl restart zabbix-agent2
+```
+
+> Hinweis: `test-complete.sh` fragt die UserParameter passiv per `zabbix_get` ab.
+> Es meldet deshalb Erfolg, selbst wenn `ServerActive` falsch ist und in
+> Wirklichkeit nichts gesammelt wird. Immer zusätzlich in
+> *Monitoring → Latest data* gegenprüfen.
 
 ## Installation
 

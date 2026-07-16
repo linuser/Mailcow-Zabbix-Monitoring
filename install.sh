@@ -1,11 +1,11 @@
 #!/bin/bash
 # ====================================================================
 #  Mailcow Zabbix Monitoring - Installer
-#  Version:    1.0
+#  Version:    1.2
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Installiert Collector, Reader, Configs und systemd Units
-#  License:    GPLv3 (see LICENSE)
+#  License:    AGPL-3.0-or-later (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 set -e
@@ -14,7 +14,7 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; NC
 
 echo ""
 echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║  Mailcow Monitoring v1.0 - Install       ║${NC}"
+echo -e "${BLUE}║  Mailcow Monitoring v1.2 - Install       ║${NC}"
 echo -e "${BLUE}║  Secure Service Architecture             ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
 echo ""
@@ -23,14 +23,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # --- Root check ---
 if [ "$EUID" -ne 0 ]; then
-    echo -e "${RED}Bitte als root ausführen${NC}"
+    echo -e "${RED}Please run as root${NC}"
     exit 1
 fi
 
 # --- Mailcow finden ---
 MAILCOW_DIR="/opt/mailcow-dockerized"
 if [ ! -f "$MAILCOW_DIR/mailcow.conf" ]; then
-    echo -e "${RED}mailcow.conf nicht gefunden in $MAILCOW_DIR${NC}"
+    echo -e "${RED}mailcow.conf not found in $MAILCOW_DIR${NC}"
     exit 1
 fi
 
@@ -44,11 +44,11 @@ OLD_BACKUP=$(grep -rh "BACKUP_PATH_PLACEHOLDER\|find -L " /usr/local/bin/check_b
 if [ -d "/opt/backup" ]; then BACKUP_PATH="/opt/backup"
 elif [ -d "/backup" ]; then BACKUP_PATH="/backup"
 fi
-echo -e "${GREEN}✓ Backup-Pfad: $BACKUP_PATH${NC}"
+echo -e "${GREEN}✓ Backup path: $BACKUP_PATH${NC}"
 
 # ====================================================================
 echo ""
-echo -e "${BLUE}=== [1/5] Scripts installieren ===${NC}"
+echo -e "${BLUE}=== [1/5] Installing scripts ===${NC}"
 # ====================================================================
 
 # Collector + Reader
@@ -65,7 +65,7 @@ echo -e "  ${GREEN}✓ mailcow-collector.py (Python)${NC}"
 
 # Alten Bash-Collector entfernen
 rm -f /usr/local/bin/mailcow-collector.sh
-echo -e "  ${GREEN}✓ mailcow-collector.sh (Bash) entfernt${NC}"
+echo -e "  ${GREEN}✓ mailcow-collector.sh (Bash) removed${NC}"
 
 # Alte Scripts aus v4.0-v4.3 aufräumen
 for OLD_SCRIPT in check_postfix_running.sh check_backup_age.sh check_backup_size.sh \
@@ -74,13 +74,13 @@ for OLD_SCRIPT in check_postfix_running.sh check_backup_age.sh check_backup_size
                   check_disk_usage.sh check_vmail.sh mailcow_version.sh; do
     if [ -f "/usr/local/bin/$OLD_SCRIPT" ]; then
         rm -f "/usr/local/bin/$OLD_SCRIPT"
-        echo -e "  ${YELLOW}✓ $OLD_SCRIPT (veraltet) entfernt${NC}"
+        echo -e "  ${YELLOW}✓ $OLD_SCRIPT (obsolete) removed${NC}"
     fi
 done
 
 # Alten Slow-Cache löschen (Format hat sich geändert)
 rm -f /var/tmp/mailcow-monitor-slow.json
-echo -e "  ${GREEN}✓ Slow-Cache zurückgesetzt${NC}"
+echo -e "  ${GREEN}✓ Slow cache reset${NC}"
 
 # Bestehende Scripts aktualisieren
 for SCRIPT in check_rbl.sh check_dns.sh check_tls.sh check_ptr.sh check_open_relay.sh \
@@ -101,17 +101,17 @@ git config --system --add safe.directory "$MAILCOW_DIR" 2>/dev/null
 
 # pflogsumm für Mailflow-Statistiken
 if ! which pflogsumm >/dev/null 2>&1; then
-    echo -e "  ${YELLOW}pflogsumm nicht gefunden, installiere...${NC}"
+    echo -e "  ${YELLOW}pflogsumm not found, installing...${NC}"
     apt-get install -y pflogsumm >/dev/null 2>&1 && \
-        echo -e "  ${GREEN}✓ pflogsumm installiert${NC}" || \
-        echo -e "  ${YELLOW}⚠ pflogsumm konnte nicht installiert werden (Mailflow-Stats nicht verfügbar)${NC}"
+        echo -e "  ${GREEN}✓ pflogsumm installed${NC}" || \
+        echo -e "  ${YELLOW}⚠ pflogsumm could not be installed (mailflow stats unavailable)${NC}"
 else
-    echo -e "  ${GREEN}✓ pflogsumm vorhanden${NC}"
+    echo -e "  ${GREEN}✓ pflogsumm present${NC}"
 fi
 
 # ====================================================================
 echo ""
-echo -e "${BLUE}=== [2/5] Systemd Service installieren ===${NC}"
+echo -e "${BLUE}=== [2/5] Installing systemd service ===${NC}"
 # ====================================================================
 
 cp "$SCRIPT_DIR/mailcow-monitor.service" /etc/systemd/system/
@@ -119,16 +119,16 @@ cp "$SCRIPT_DIR/mailcow-monitor.timer" /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable mailcow-monitor.timer
 systemctl start mailcow-monitor.timer
-echo -e "${GREEN}✓ mailcow-monitor.timer aktiviert${NC}"
+echo -e "${GREEN}✓ mailcow-monitor.timer enabled${NC}"
 
 # Ersten Lauf manuell starten
-echo -e "${YELLOW}  Erster Collector-Lauf (kann bis zu 60s dauern)...${NC}"
+echo -e "${YELLOW}  First collector run (may take up to 60s)...${NC}"
 systemctl start mailcow-monitor.service
-echo -e "${GREEN}✓ Erster Lauf abgeschlossen${NC}"
+echo -e "${GREEN}✓ First run completed${NC}"
 
 # ====================================================================
 echo ""
-echo -e "${BLUE}=== [3/5] Zabbix Agent konfigurieren ===${NC}"
+echo -e "${BLUE}=== [3/5] Configuring Zabbix agent ===${NC}"
 # ====================================================================
 
 # Alte Einzel-Configs entfernen
@@ -137,17 +137,62 @@ rm -f /etc/zabbix/zabbix_agent2.d/mailcow.conf.bak
 
 # Neue Single-Config
 cp "$SCRIPT_DIR/mailcow-zabbix.conf" /etc/zabbix/zabbix_agent2.d/mailcow.conf
-echo -e "${GREEN}✓ 246 UserParameters in einer Config${NC}"
+echo -e "${GREEN}✓ 246 UserParameters in a single config${NC}"
 
 # UnsafeUserParameters NICHT mehr nötig
 if grep -q "^UnsafeUserParameters=1" /etc/zabbix/zabbix_agent2.conf 2>/dev/null; then
     sed -i 's/^UnsafeUserParameters=1/UnsafeUserParameters=0/' /etc/zabbix/zabbix_agent2.conf
-    echo -e "${GREEN}✓ UnsafeUserParameters=0 gesetzt${NC}"
+    echo -e "${GREEN}✓ UnsafeUserParameters=0 set${NC}"
+fi
+
+# ServerActive pruefen. ALLE 246 Items sind aktive Checks: der Agent holt sie
+# selbst von der Adresse in ServerActive. Server= regelt nur passive Abfragen
+# und genuegt NICHT. Fehlt ServerActive (oder zeigt es auf localhost, waehrend
+# der Zabbix-Server woanders laeuft), sammelt kein einziges Item Daten - ohne
+# Fehlermeldung. Items und Trigger sind im Frontend sichtbar, Graphen bleiben
+# leer. Wir aendern hier nichts automatisch: eine kaputte Zeile verhindert den
+# Agent-Start komplett.
+AGENT_CONF="/etc/zabbix/zabbix_agent2.conf"
+if [ -f "$AGENT_CONF" ]; then
+    SA=$(grep -E '^ServerActive=' "$AGENT_CONF" | head -1 | cut -d= -f2-)
+    HN=$(grep -E '^Hostname=' "$AGENT_CONF" | head -1 | cut -d= -f2-)
+    SA_COUNT=$(grep -cE '^ServerActive=' "$AGENT_CONF")
+
+    if [ -z "$SA" ]; then
+        echo -e "${RED}✗ ServerActive is not set${NC}"
+        echo -e "${RED}  All 246 items are ACTIVE checks. Without ServerActive"
+        echo -e "  NOT a single item will collect data - silently.${NC}"
+        echo -e "${YELLOW}  Add to $AGENT_CONF:"
+        echo -e "    ServerActive=<ip-or-name-of-your-zabbix-server>"
+        echo -e "    Hostname=<must match the host name in Zabbix>${NC}"
+        AGENT_WARN=1
+    elif echo "$SA" | grep -qE '^(127\.0\.0\.1|localhost)(,|$)'; then
+        echo -e "${YELLOW}⚠ ServerActive=$SA points at localhost"
+        echo -e "  Only correct if the Zabbix server runs on THIS host.${NC}"
+        AGENT_WARN=1
+    else
+        echo -e "${GREEN}✓ ServerActive=$SA${NC}"
+    fi
+
+    if [ "$SA_COUNT" -gt 1 ]; then
+        echo -e "${RED}✗ ServerActive is defined $SA_COUNT times - the agent will not start${NC}"
+        AGENT_WARN=1
+    fi
+
+    if [ -z "$HN" ]; then
+        echo -e "${YELLOW}⚠ Hostname not set - must exactly match the host name in Zabbix${NC}"
+        AGENT_WARN=1
+    else
+        echo -e "${GREEN}✓ Hostname=$HN${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠ $AGENT_CONF not found - is Zabbix Agent 2 installed?${NC}"
+    AGENT_WARN=1
 fi
 
 # ====================================================================
 echo ""
-echo -e "${BLUE}=== [4/5] Sicherheit härten ===${NC}"
+echo -e "${BLUE}=== [4/5] Hardening security ===${NC}"
 # ====================================================================
 
 # Docker-Gruppe: nicht anfassen (wird ggf. von anderen Templates benötigt)
@@ -155,9 +200,9 @@ echo -e "${BLUE}=== [4/5] Sicherheit härten ===${NC}"
 # Alte sudoers entfernen
 if [ -f /etc/sudoers.d/zabbix-mailcow ]; then
     rm -f /etc/sudoers.d/zabbix-mailcow
-    echo -e "${GREEN}✓ Sudo-Regeln entfernt${NC}"
+    echo -e "${GREEN}✓ Sudo rules removed${NC}"
 else
-    echo -e "${GREEN}✓ Keine Sudo-Regeln vorhanden${NC}"
+    echo -e "${GREEN}✓ No sudo rules present${NC}"
 fi
 
 # JSON-File für zabbix lesbar
@@ -165,7 +210,7 @@ chmod 644 /var/tmp/mailcow-monitor.json 2>/dev/null
 
 # ====================================================================
 echo ""
-echo -e "${BLUE}=== [5/5] Agent neustarten + Test ===${NC}"
+echo -e "${BLUE}=== [5/5] Restarting agent + test ===${NC}"
 # ====================================================================
 
 systemctl restart zabbix-agent2
@@ -189,26 +234,38 @@ done
 
 echo ""
 echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║        INSTALLATION ABGESCHLOSSEN         ║${NC}"
+echo -e "${BLUE}║         INSTALLATION COMPLETE            ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "  ${GREEN}✓ Collector: systemd timer (alle 60s als root)${NC}"
+echo -e "  ${GREEN}✓ Collector: systemd timer (every 60s as root)${NC}"
 echo -e "  ${GREEN}✓ Reader: /var/tmp/mailcow-monitor.json${NC}"
-echo -e "  ${GREEN}✓ Zabbix: liest nur JSON (keine Rechte nötig)${NC}"
+echo -e "  ${GREEN}✓ Zabbix: reads JSON only (no privileges required)${NC}"
 echo ""
-echo -e "  Sicherheit:"
-echo -e "  ${GREEN}✓ Kein UnsafeUserParameters${NC}"
+echo -e "  Security:"
+echo -e "  ${GREEN}✓ No UnsafeUserParameters${NC}"
 
-echo -e "  ${GREEN}✓ Kein sudo für Zabbix${NC}"
+echo -e "  ${GREEN}✓ No sudo for Zabbix${NC}"
 echo ""
-echo -e "  Test: $PASS bestanden, $ERRORS fehlgeschlagen"
+echo -e "  Test: $PASS passed, $ERRORS failed"
 echo ""
-echo -e "  Befehle:"
+echo -e "  Commands:"
 echo -e "    systemctl status mailcow-monitor.timer"
 echo -e "    cat /var/tmp/mailcow-monitor.json | python3 -m json.tool | head -20"
 echo -e "    zabbix_get -s 127.0.0.1 -k mailcow.rspamd.scanned"
 echo ""
 echo -e "  ${YELLOW}⚠ Zabbix Template:${NC}"
-echo -e "    Falls noch alte Einzel-Templates (Postfix, Dovecot, Security...)"
-echo -e "    verlinkt sind: Unlink + 'Mailcow Complete Monitoring v1.0' importieren"
-echo -e "    Template: templates/mailcow-complete-monitoring.yaml"
+echo -e "    Data collection → Templates → Import"
+echo -e "    File: templates/mailcow-complete-monitoring.yaml"
+echo -e "    ${YELLOW}Tick 'Create new' AND 'Update existing', NOT 'Delete missing'.${NC}"
+echo -e "    With only 'Update existing' Zabbix skips missing objects and still"
+echo -e "    reports success - you end up with 0 triggers."
+echo -e "    Afterwards the template must show: Items 246 | Triggers 63 | Dashboards 19"
+echo ""
+echo -e "    If old individual templates (Postfix, Dovecot, Security...) are"
+echo -e "    still linked: unlink them first."
+if [ "${AGENT_WARN:-0}" = "1" ]; then
+    echo ""
+    echo -e "  ${RED}⚠ Agent configuration needs attention (see [3/5] above).${NC}"
+    echo -e "  ${RED}  Until ServerActive is correct, no data will be collected.${NC}"
+    echo -e "    Validate before restarting:  zabbix_agent2 -T -c $AGENT_CONF"
+fi
