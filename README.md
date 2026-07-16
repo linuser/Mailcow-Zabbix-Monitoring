@@ -1,4 +1,4 @@
-# Mailcow Monitoring v1.0 for Zabbix
+# Mailcow Monitoring v1.2 for Zabbix
 
 Complete monitoring solution for Mailcow-Dockerized with Zabbix Agent 2. 246 metrics, 71 triggers, 19 dashboards — secure by design, installed in 5 minutes.
 

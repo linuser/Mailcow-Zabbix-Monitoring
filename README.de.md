@@ -1,4 +1,4 @@
-# Mailcow Monitoring v1.0 für Zabbix
+# Mailcow Monitoring v1.2 für Zabbix
 
 Vollständiges Monitoring für Mailcow-Dockerized mit Zabbix Agent 2.
 
@@ -173,7 +173,7 @@ Alternativ per Release-Archiv statt git — siehe [UPDATE.de.md](UPDATE.de.md).
 ## Paketstruktur
 
 ```
-mailcow-monitoring-v1.0/
+Mailcow-Zabbix-Monitoring/
 ├── install.sh                        # Installer
 ├── uninstall.sh                      # Deinstallation
 ├── mailcow-zabbix.conf               # 246 UserParameters

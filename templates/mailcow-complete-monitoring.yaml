@@ -9,7 +9,7 @@ zabbix_export:
     uuid: 33fee4d48e63458485cd0c65f9a7a787
     vendor:
       name: Alexander Fox | PlaNet Fox
-      version: '1.0'
+      version: '1.2'
     description: 'Vollständiges Mailcow-Dockerized Monitoring (246 Metriken, 71 Trigger, 19 Dashboards).
 
       Postfix, Dovecot, Rspamd (inkl. Bayes-Training), ClamAV, Docker Health, TLS/Zertifikate,

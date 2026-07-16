@@ -1,180 +1,157 @@
 # Changelog
 
-## v1.2 (2026-07-15)
+> Entries from v1.2 onwards are written in English. Earlier entries are in German.
 
-### Bugfix: Trigger wurden nie importiert (schwerwiegend)
-- **63 der 71 Trigger konnten in keiner Installation angelegt werden.** Ihre
-  Expressions referenzierten den *sichtbaren* Template-Namen
-  (`/Mailcow Complete Monitoring v1.0/...`) statt des *technischen*
-  (`/mailcow_complete_monitoring_v45/...`). Unter dem sichtbaren Namen
-  existiert kein Template -> Trigger wurden nicht erstellt.
-  Die 8 LLD-Trigger-Prototypen nutzten den technischen Namen bereits korrekt,
-  daher funktionierte ausschliesslich die Discovery.
-- **56 Trigger-Namen** nutzten doppelte Klammern `{{HOST.NAME}}`. In Zabbix ist
-  `{{...}}` Makro-Funktions-Syntax und ohne Funktion ungueltig -> `{HOST.NAME}`.
-- **RBL-Trigger** zeigte `*UNKNOWN*` statt der Blacklist: das Expression-Makro
-  `{?last(/<template>/mailcow.security.rbl.detail)}` im Trigger-Namen
-  referenzierte ebenfalls den sichtbaren Namen.
+## v1.2 (2026-07-16)
 
-### Bugfix: Dashboards leer (#3)
-- **Alle 46 Widgets in 19 Dashboards** nutzten die Zabbix-6.x-Syntax fuer Data
-  Sets (`ds.items.0.0`, `ds.color.0`). Zabbix 7.0 erwartet
-  `ds.<dataset>.<feld>.<item>` und ein `reference`-Feld je Widget. Unbekannte
-  Felder ignoriert Zabbix stillschweigend: Achsen und Trigger-Marker wurden
-  gezeichnet, das Data Set blieb leer. Items und Trigger waren nie betroffen.
-  - Umstellung auf Item-List-Modus: `ds.0.dataset_type`, `ds.0.itemids.N`
-    (ITEM: host+key), `ds.0.color.N`, `ds.0.missingdatafunc`, `ds.0.width`
-  - `reference`-Feld ergaenzt (in 7.0 Pflicht, fehlte komplett)
-  - Der in v1.0 vermerkte `ds.hosts`-Fix war nicht wirksam - das Feld war im
-    Template nicht vorhanden.
-- **YAML:** `y`-Koordinate der Widgets quotiert (`'y':`). YAML 1.1 liest bloszes
-  `y` als Boolean; offizielle Zabbix-Exports quoten es durchgehend.
+### Fixed — triggers were never imported (critical)
+- **63 of the 71 triggers could not be created in any installation.** Their
+  expressions referenced the template's *visible* name
+  (`/Mailcow Complete Monitoring v1.0/...`) instead of its *technical* name
+  (`/mailcow_complete_monitoring_v45/...`). No template exists under the visible
+  name, so the triggers were never created. The 8 LLD trigger prototypes already
+  used the technical name correctly — which is why discovery was the only part
+  that worked.
+- **56 trigger names** used doubled braces `{{HOST.NAME}}`. In Zabbix `{{...}}`
+  is macro-function syntax and invalid without a function → `{HOST.NAME}`.
+- The **RBL trigger** displayed `*UNKNOWN*` instead of the blacklist name: the
+  expression macro `{?last(/<template>/mailcow.security.rbl.detail)}` inside the
+  trigger name referenced the visible name as well.
 
-### Bugfix: RBL-Dauerfehlalarm auf Cloud-Hosts
-- `check_rbl.sh` wertete **jede** nicht-leere DNS-Antwort als Listung. Spamhaus
-  antwortet Rechenzentrums- und Public-Resolvern (Hetzner, DigitalOcean, OVH,
-  Google DNS ...) aber mit Fehlercodes `127.255.255.252/254/255`. Ergebnis:
-  permanenter **Disaster**-Alarm auf voellig sauberen Servern.
-  Jetzt zaehlen nur `127.0.0.x` als Listung; Fehlercodes erscheinen als
-  `error_resolver_blocked:<rbl>` im Detail-Item, ohne Alarm.
-- IP-Ermittlung: `dig -4` erzwungen. Auf Dual-Stack-Hosts mit IPv6-Resolvern
-  lieferte die OpenDNS-Abfrage nichts, das Script fiel stumm auf curl zurueck.
-- Aufruf mit `detail` gab bei Cache-Miss zwei Zeilen aus (Zahl + Text), weil
-  `echo ... | tee` zusaetzlich nach stdout schrieb.
-
-### Verbesserung: doppelte Alarme
-- **5 Trigger-Dependencies** ergaenzt. Schwellen-Leitern feuerten doppelt fuer
-  denselben Sachverhalt (z.B. ClamAV ">7 Tage" Warning *und* ">30 Tage" High).
-  Der jeweils niedrigere Trigger haengt jetzt am hoeheren:
-  ClamAV-Alter, Watchdog, ACME-Restlaufzeit, Bounce, Deferred.
-  `mailcow.mail.received` bleibt bewusst ohne Dependency - Spike und Drop
-  schliessen sich gegenseitig aus.
-- **2 doppelte Trigger-Namen** aufgeloest:
-  - beide ACME-Trigger hiessen identisch -> High heisst jetzt "... - CRITICAL"
-  - `mailcow.mail.deferred` und `mailcow.queue.deferred` teilten sich einen
-    Namen -> Queue-Variante heisst jetzt "... deferred mails in queue"
-
-### Dokumentation
-- **`ServerActive` und `Hostname`** dokumentiert. Alle 246 Items sind aktive
-  Agent-Checks und brauchen `ServerActive`; die bisherige Doku nannte nur
-  `Server=`, das ausschliesslich passive Abfragen regelt. Fehlt `ServerActive`,
-  liefert **kein einziges Item** Daten - ohne Fehlermeldung.
-  `update.sh` prueft das jetzt und warnt.
-- Import-Optionen: "Create new" **und** "Update existing" noetig. Mit nur
-  "Update existing" ueberspringt Zabbix fehlende Objekte und meldet trotzdem
-  Erfolg.
-- Klargestellt, dass Template-Dashboards nur ueber
-  *Monitoring -> Hosts -> <host> -> Dashboards* sichtbar sind.
-- Hinweis, dass `test-complete.sh` nur passiv per `zabbix_get` prueft und damit
-  weder aktive Checks noch Trigger oder Dashboards verifiziert.
-- Grenzen der RBL-Pruefung auf Cloud-Hosts dokumentiert (eigener Resolver oder
-  Spamhaus-DQS noetig).
-
-### Lizenz
-- Wechsel von **GPLv3 auf AGPL-3.0-or-later**, passend zu Zabbix seit 7.0.
-
-### Werkzeuge
-- `update.sh`: aktualisiert die Host-Seite, mit Backup, `--check`, `--rollback`,
-  ServerActive-Pruefung und Verifikation der erzeugten Werte.
-- `tools/fix_dashboards.py`, `tools/fix_triggers.py`: idempotente Konverter, mit
-  denen die obigen Template-Fixes reproduzierbar sind.
-
-### Bekannt / offen
-- Der Collector schreibt bei fehlgeschlagener Messung **0** statt den Wert
-  wegzulassen. "Messung fehlgeschlagen" und "echter Wert ist 0" sind dadurch
-  nicht unterscheidbar, auch nicht fuer `mailcow.collector.errors`. Mit aktiven
-  Triggern kann das Fehlalarme erzeugen. Geplant fuer v1.3.
-- Quota-/Used-Items zeigen "KMB" (Einheit `MB` + automatischer SI-Praefix von
-  Zabbix). Fix waere `!MB` oder Umstellung auf Bytes mit Einheit `B`.
-- `docker ps --filter name=postfix` matcht seit neueren Mailcow-Versionen auch
-  `postfix-tlspol-mailcow-1`. Aktuell greift die Auswahl zufaellig richtig;
-  ein exaktes Matching waere robuster.
-### Aufraeumen
-- **`scripts/dovecot_check.sh` entfernt.** Seit der Inline-Optimierung (#opt10)
-  sammelt `collect_dovecot()` alles selbst per docker exec; das Script wurde von
-  niemandem mehr aufgerufen, lag aber weiter in `/usr/local/bin`, wurde bei jedem
-  Update gesichert und war in beiden READMEs sowie der DOKU als aktives Modul
-  gefuehrt. `install.sh` entfernt es jetzt bei Bestandsinstallationen mit.
-  (Einziger Orphan - alle uebrigen Scripts haben nachweislich Aufrufer.)
-- **Lizenz-Header vereinheitlicht:** 10 von 15 Dateien trugen noch
-  `License: GPLv3`, waehrend die LICENSE-Datei bereits AGPL-3.0 ist. Jetzt
-  durchgehend `AGPL-3.0-or-later`.
-- **shellcheck:** die drei verbliebenen Warnungen behoben - unbenutzte Variable
-  `MAILCOW_DIR` in `check_open_relay.sh` (SC2034), Schleife ueber ein einzelnes
-  Element in `install.sh` (SC2043), `local x=$(...)` maskierte Rueckgabewerte in
-  `postfix_stats_docker.sh` (SC2155). Das Repo ist jetzt auch auf
-  `--severity=warning` sauber, nicht nur auf der CI-Stufe `--severity=error`.
-
-### Dokumentation: Installation und Update korrigiert
-- Beide READMEs wiesen im Update-Abschnitt an, **nur** "☑ Update existing"
-  anzuhaken. Genau damit legt Zabbix fehlende Objekte nicht an und meldet
-  trotzdem Erfolg - die Ursache fuer Installationen mit 0 von 71 Triggern.
-  Jetzt durchgehend "Create new" UND "Update existing", inklusive Kontrollwert
-  (Items 246 | Triggers 63 | Dashboards 19).
-- Update-Weg zeigte auf `install.sh`; korrekt ist `update.sh` (Backup,
-  --check, --rollback, Verifikation).
-- Installation via GitHub dokumentiert (git clone und tar.gz-Variante); die
-  deutsche Fassung verwies noch auf eine nicht existierende
-  `mailcow-monitoring-v1.0.zip`.
-- Ergaenzt: wo die Template-Dashboards zu finden sind (Monitoring -> Hosts ->
-  Host -> Dashboards, nicht unter Monitoring -> Dashboards).
-- Entfernt: "5-10 Minuten warten, dann Dashboard pruefen". Daten erscheinen
-  binnen einer Minute; blieb es leer, war es nie Geduld, sondern ServerActive.
-- **Mailflow-Kapitel** in der DOKU ergaenzt. Das Modul war bisher nur in
-  Tabellenzeilen erwaehnt, obwohl es mit 28 Items und 9 Triggern das groesste
-  ist und als einziges Durchsatz statt Ist-Zustand misst. Neu dokumentiert:
-  pflogsumm ueber `docker logs --since 1h` (alle Werte sind Stundensummen),
-  eigener 5-Minuten-Cache getrennt vom 1h-Slow-Cache, pflogsumm als
-  Host-Voraussetzung, Aufschluesselung der 28 Items, die 9 Trigger inkl.
-  Begruendung warum "volume drop" High und "spike" nur Warning ist, sowie die
-  Grenzen (Baseline ohne Wochentag-Saisonalitaet, stille Nullen bei Fehlschlag).
-- **MAILCOW-MONITORING-DOKU.md** nachgezogen: Kopf stand auf "v1.0 (Stand:
-  18.02.2026)", die Installation verwies auf eine nicht existierende
-  `mailcow-monitoring-v1.0.zip`, ein Update-Abschnitt fehlte vollstaendig, und
-  die Menuepfade nannten "Configuration -> Templates" (heisst seit Zabbix 6.0
-  "Data collection"). Jetzt: Installation via GitHub, Update via `git pull` +
-  `update.sh`, Import-Optionen, ServerActive und Fundort der Dashboards.
-  Zahlendreher korrigiert: "303 Template Items" -> 246 Items + 21 LLD-Prototypen.
-- `UPDATE.md` jetzt englisch, deutsche Fassung als `UPDATE.de.md` - analog zum
-  bestehenden README-Muster.
-
-### Bugfix: v1.2-Fixes erreichten Neuinstallationen nicht
-- `ServerActive` wurde nur im Update-Pfad geprueft (`update.sh`) und nur in
-  `UPDATE.md` dokumentiert. `install.sh` pruefte es gar nicht, und beide READMEs
-  erklaerten weiterhin ausschliesslich `Server=` - mit der Begruendung, das
-  Test-Script brauche es. Eine Neuinstallation lief damit exakt in den Fehler,
-  den v1.2 beheben sollte: kein `ServerActive` -> keines der 246 aktiven Items
-  sammelt Daten, ohne Fehlermeldung.
-  - `install.sh` prueft jetzt `ServerActive`/`Hostname` (fehlend, localhost,
-    Duplikate) und weist am Ende erneut darauf hin.
-  - Beide READMEs erklaeren aktive Checks, `ServerActive`, `Hostname` und die
-    Einmaligkeit der Parameter; inklusive Hinweis, dass `test-complete.sh`
-    passiv prueft und den Fehler prinzipbedingt nicht sehen kann.
-- `install.sh`: Import-Optionen ergaenzt ("Create new" UND "Update existing") und
-  veraltete Referenz auf Template v1.0 entfernt.
-
-### Bugfix: Template war nicht importierbar
-- Alle 7 Hysterese-Trigger trugen `recovery_expression`, aber kein
-  `recovery_mode: RECOVERY_EXPRESSION`. Zabbix' Default ist `EXPRESSION`, dort
-  muss `recovery_expression` leer sein - der Import brach ab mit
+### Fixed — template could not be imported at all
+- All 7 hysteresis triggers carried a `recovery_expression` but no
+  `recovery_mode: RECOVERY_EXPRESSION`. Zabbix defaults to `EXPRESSION`, where
+  `recovery_expression` must be empty, so the import aborted with
   `Incorrect value for field "recovery_expression": should be empty.`
-  `tools/fix_triggers.py` prueft und ergaenzt die Regel jetzt.
 
-### Bugfix: Batching-Optimierung erzeugte stille Nullen
-- **Postfix-PID:** `master.pid` wird von Postfix rechtsbuendig mit Leerzeichen
-  aufgefuellt ("                             394"). Die gebuendelte Shell-Variante
-  las sie ohne Strip, `[ -d "/proc/$PID" ]` pruefte also
-  `/proc/                             394` -> immer 0. Ergebnis: Trigger
-  "Postfix not running" (DISASTER) feuerte dauerhaft bei laufendem Postfix.
-  Fix: `| tr -dc '0-9'`.
-- **Batch verwarf alles bei einem Fehler:** `run()` liefert bei Exit != 0 den
-  Default ""; bei einer Befehlskette ist das der Exit des LETZTEN Befehls.
-  Der Rspamd-Batch endet auf `rspamc stat` - scheitert das, wurde das bereits
-  erfolgreich geholte `/stat`-JSON verworfen und alle 18 Rspamd-Metriken fielen
-  auf 0 (u.a. `scanned`, ein kumulativer Zaehler, der auf einem laufenden Server
-  nie 0 ist). Betraf ebenso Postfix (`postconf`), vmail (`du`), ClamAV und
-  Agent-Meta (`tail`). Fix: `; exit 0` am Ende jedes gebuendelten `sh -c`,
-  fehlende Sektionen bleiben einfach leer. Teildaten sind besser als keine.
+### Fixed — dashboards stayed empty (#3)
+- **All 46 widgets across 19 dashboards** used the Zabbix 6.x data set field
+  syntax (`ds.items.0.0`, `ds.color.0`). Zabbix 7.0 expects
+  `ds.<dataset>.<field>.<item>` plus a `reference` field per widget. Zabbix
+  silently ignores unknown fields: axes and trigger markers were rendered, the
+  data set stayed empty. Items and triggers were never affected.
+  - Converted to item list mode: `ds.0.dataset_type`, `ds.0.itemids.N`
+    (ITEM: host+key), `ds.0.color.N`, `ds.0.missingdatafunc`, `ds.0.width`
+  - Added the `reference` field (mandatory in 7.0, missing entirely)
+  - The `ds.hosts` fix noted in v1.0 had no effect — that field was not present
+    in the template.
+- **YAML:** widget `y` coordinates are now quoted (`'y':`). YAML 1.1 reads a bare
+  `y` as a boolean; official Zabbix exports quote it throughout.
+
+### Fixed — permanent RBL false alarm on cloud hosts
+- `check_rbl.sh` treated **every** non-empty DNS answer as a listing. Spamhaus,
+  however, answers queries from datacenter and public resolvers (Hetzner,
+  DigitalOcean, OVH, Google DNS …) with error codes `127.255.255.252/254/255`.
+  The result was a permanent **Disaster** alarm on perfectly clean servers.
+  Only `127.0.0.x` counts as a listing now; error codes surface as
+  `error_resolver_blocked:<rbl>` in the detail item, without raising an alarm.
+- IP detection now forces `dig -4`. On dual-stack hosts with IPv6 resolvers the
+  OpenDNS query returned nothing and the script silently fell back to curl.
+- Calling it with `detail` emitted two lines on a cache miss (count + text)
+  because `echo ... | tee` also wrote to stdout.
+
+### Fixed — batching optimisation produced silent zeros
+- **Postfix PID:** Postfix writes `master.pid` right-aligned with padding
+  (`"                             394"`). The batched shell variant read it
+  without stripping, so `[ -d "/proc/$PID" ]` tested
+  `/proc/                             394` → always 0. The "Postfix not running"
+  trigger (DISASTER) fired permanently while Postfix was healthy.
+  Fixed with `| tr -dc '0-9'`.
+- **A failing command discarded the whole batch:** `run()` returns its default
+  (`""`) on a non-zero exit code, and for a command list that is the exit code of
+  the *last* command. The rspamd batch ends with `rspamc stat` — if that fails,
+  the `/stat` JSON already fetched successfully was thrown away and all 18 rspamd
+  metrics fell back to 0, including `scanned`, a cumulative counter that is never
+  legitimately 0 on a running server. The postfix (`postconf`), vmail (`du`),
+  ClamAV and agent (`tail`) batches had the same flaw. Fixed by appending
+  `; exit 0` to every batched `sh -c`; missing sections simply stay empty.
+  Partial data beats no data.
+
+### Changed — duplicate alerts
+- **Added 5 trigger dependencies.** Threshold ladders fired twice for the same
+  condition (e.g. ClamAV ">7 days" Warning *and* ">30 days" High). The lower
+  trigger now depends on the higher one: ClamAV age, watchdog, ACME expiry,
+  bounce, deferred. `mailcow.mail.received` deliberately has no dependency —
+  spike and drop are mutually exclusive.
+- **Resolved 2 duplicate trigger names:**
+  - both ACME triggers had identical names → the High one is now "... - CRITICAL"
+  - `mailcow.mail.deferred` and `mailcow.queue.deferred` shared a name → the
+    queue variant is now "... deferred mails in queue"
+
+### Changed — documentation
+- **`ServerActive` and `Hostname` are now documented.** All 246 items are active
+  agent checks and require `ServerActive`; the previous docs only mentioned
+  `Server=`, which governs passive queries alone. Without `ServerActive`, **not a
+  single item** collects data — silently. `install.sh` and `update.sh` both check
+  this and warn.
+- Import options: **"Create new" AND "Update existing"** are required. With only
+  "Update existing" Zabbix skips missing objects and still reports success — the
+  cause of installations with 0 of 71 triggers. Both READMEs previously
+  instructed exactly that.
+- The update path pointed at `install.sh`; the correct one is `update.sh`.
+- Installation via GitHub documented (git clone and tar.gz); the German README
+  still referenced a non-existent `mailcow-monitoring-v1.0.zip`.
+- Documented where template dashboards actually live
+  (*Monitoring → Hosts → host → Dashboards*, not *Monitoring → Dashboards*).
+- Removed "wait 5–10 minutes, then check the dashboard". Data appears within a
+  minute; if it stays empty the cause was never patience, but `ServerActive`.
+- Noted that `test-complete.sh` only probes passively via `zabbix_get` and can
+  therefore verify neither active checks nor triggers nor dashboards.
+- Documented the limits of the RBL check on cloud hosts (own resolver or a
+  Spamhaus DQS key required).
+- **Added a Mailflow chapter** to the project documentation. The largest module
+  (28 items, 9 triggers) previously existed only as table rows: pflogsumm runs
+  over `docker logs --since 1h`, so every value is an hourly total; it keeps its
+  own 5-minute cache separate from the 1h slow cache; pflogsumm is a host
+  prerequisite; documents all 9 triggers and why "volume drop" is High while
+  "spike" is only Warning.
+- Project documentation: header still said v1.0 (18.02.2026), the install section
+  referenced a non-existent zip, an update section was missing entirely, and menu
+  paths said "Configuration → Templates" (renamed to "Data collection" in Zabbix
+  6.0). Item count corrected: 303 claimed, actually 246 items + 21 LLD prototypes.
+- `UPDATE.md` is now English, the German version moved to `UPDATE.de.md` —
+  matching the existing README pattern.
+- Script output is now English; code comments stay German.
+
+### Changed — licence
+- Switched from **GPLv3 to AGPL-3.0-or-later**, matching Zabbix since 7.0.
+- Unified licence headers: 10 of 15 files still said `License: GPLv3` while the
+  LICENSE file was already AGPL-3.0.
+
+### Added — tools
+- `update.sh`: updates the host side, with backup, `--check`, `--rollback`,
+  `ServerActive` validation and verification of the collected values. It waits
+  for a genuinely fresh JSON instead of sleeping a fixed interval.
+- `tools/fix_dashboards.py`, `tools/fix_triggers.py`, `tools/fix_collector.py`:
+  idempotent converters that make the template and collector fixes above
+  reproducible.
+
+### Removed
+- **`scripts/dovecot_check.sh`.** Since the inline optimisation (#opt10)
+  `collect_dovecot()` does everything itself via docker exec; the script was
+  never called again, yet was still installed to `/usr/local/bin`, backed up on
+  every update and documented as an active module in both READMEs and the project
+  documentation. `install.sh` now removes it from existing installations.
+  (The only orphan — every other script has verified callers.)
+- Dead code flagged by shellcheck: unused `MAILCOW_DIR` in `check_open_relay.sh`
+  (SC2034), a loop over a single element in `install.sh` (SC2043), and
+  `local x=$(...)` masking return values in `postfix_stats_docker.sh` (SC2155).
+  The repository is now clean at `--severity=warning`, not just at the CI level
+  `--severity=error`.
+
+### Known issues
+- The collector writes **0** when a measurement fails instead of omitting the
+  key. "Measurement failed" and "the value really is 0" are indistinguishable —
+  even to `mailcow.collector.errors`, which stays at 0. With triggers active this
+  can produce false alarms. Planned for v1.3.
+- Quota/used items display "KMB" (unit `MB` plus Zabbix's automatic SI prefix).
+  The fix would be `!MB`, or switching to bytes with unit `B`.
+- `docker ps --filter name=postfix` also matches `postfix-tlspol-mailcow-1` in
+  newer Mailcow versions. The selection currently picks the right one by chance;
+  exact matching would be more robust.
+- The anomaly baseline uses `trendavg` over one week — a flat mean without
+  weekday or time-of-day seasonality. `baselinewma()` would be the appropriate
+  replacement (planned for v1.3).
 
 ## v1.1 (2026-03-28)
 

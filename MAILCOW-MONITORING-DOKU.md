@@ -191,7 +191,7 @@ Trigger: Restarted → WARNING, Memory >25% → WARNING
 ## Dateien im Paket
 
 ```
-mailcow-monitoring-v1.0/
+Mailcow-Zabbix-Monitoring/
 ├── scripts/
 │   ├── mailcow-collector.py      # Haupt-Collector (22 Module, 1819 Zeilen)
 │   ├── mailcow-reader.sh         # JSON-Reader (Python3-basiert)
