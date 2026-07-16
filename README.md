@@ -8,7 +8,7 @@ Complete monitoring solution for Mailcow-Dockerized with Zabbix Agent 2. 246 met
 
 ```
 systemd timer (60s) → mailcow-collector.py (root)
-  → /var/tmp/mailcow-monitor.json (chmod 644)
+  → /run/mailcow-monitor/monitor.json (chmod 644)
     → Zabbix Agent 2 (zabbix user) → mailcow-reader.sh → reads JSON
 ```
 
@@ -98,6 +98,20 @@ systemctl restart zabbix-agent2
 > Note: `test-complete.sh` queries the UserParameters passively via `zabbix_get`.
 > It therefore reports success even when `ServerActive` is wrong and nothing is
 > actually being collected. Always verify in *Monitoring → Latest data*.
+
+### Security
+
+- The collector runs as root via a systemd timer; the Zabbix agent only reads a
+  JSON file and needs no privileges at all — no sudo rules,
+  `UnsafeUserParameters=0`.
+- State lives in `/run/mailcow-monitor` (`root:root`, `0755`), created by systemd.
+  Up to v1.2 it lived in world-writable `/var/tmp`.
+- The Mailcow database password is passed to `docker exec` via a `0600` env file,
+  never on the command line — `/proc/<pid>/cmdline` is world-readable.
+- The systemd unit is hardened (`NoNewPrivileges`, `ProtectSystem=full`,
+  `PrivateTmp`, `ProtectHome`, and more).
+- Values from the database never reach a shell: nothing parameterised uses
+  `shell=True`.
 
 ## Installation
 
@@ -247,7 +261,7 @@ mailcow-monitoring/
 │   └── postfix_log_analysis.sh       # Postfix logs + Postscreen
 ├── mailcow-monitor.service           # systemd oneshot
 ├── mailcow-monitor.timer             # systemd timer (60s)
-├── LICENSE                           # AGPLv3
+├── LICENSE                           # MIT
 ├── CHANGELOG.md
 ├── MAILCOW-MONITORING-DOKU.md        # Detailed docs (German)
 ├── README.md                         # This file
@@ -262,7 +276,7 @@ sudo ./uninstall.sh
 
 ## License
 
-AGPLv3 — code must remain open source and the original author must be credited.
+MIT — free to use, modify and redistribute; keep the copyright notice.
 See [LICENSE](LICENSE) for details.
 
 **© 2026 Alexander Fox | PlaNet Fox** — Created with Open Source and ❤

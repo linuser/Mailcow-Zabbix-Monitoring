@@ -6,7 +6,7 @@ Vollständiges Monitoring für Mailcow-Dockerized mit Zabbix Agent 2.
 
 ```
 systemd timer (60s) → mailcow-collector.py (root)
-  → /var/tmp/mailcow-monitor.json (chmod 644)
+  → /run/mailcow-monitor/monitor.json (chmod 644)
     → Zabbix Agent 2 (zabbix user) → mailcow-reader.sh → liest JSON
 ```
 
@@ -58,6 +58,20 @@ systemctl restart zabbix-agent2
 > Es meldet deshalb Erfolg, selbst wenn `ServerActive` falsch ist und in
 > Wirklichkeit nichts gesammelt wird. Immer zusätzlich in
 > *Monitoring → Latest data* gegenprüfen.
+
+### Sicherheit
+
+- Der Collector läuft als root über einen systemd-Timer; der Zabbix-Agent liest
+  nur eine JSON-Datei und braucht keinerlei Rechte — keine Sudo-Regeln,
+  `UnsafeUserParameters=0`.
+- Der Zustand liegt in `/run/mailcow-monitor` (`root:root`, `0755`), angelegt von
+  systemd. Bis v1.2 lag er im weltschreibbaren `/var/tmp`.
+- Das Mailcow-DB-Passwort wird `docker exec` über eine `0600`-Env-Datei übergeben,
+  nie auf der Kommandozeile — `/proc/<pid>/cmdline` ist weltlesbar.
+- Die systemd-Unit ist gehärtet (`NoNewPrivileges`, `ProtectSystem=full`,
+  `PrivateTmp`, `ProtectHome` u. a.).
+- Werte aus der Datenbank landen nie in einer Shell: kein `shell=True` für
+  irgendetwas Parametrisiertes.
 
 ## Installation
 
@@ -194,7 +208,7 @@ Mailcow-Zabbix-Monitoring/
 │   └── postfix_log_analysis.sh       # Postfix Logs + Postscreen
 ├── mailcow-monitor.service           # systemd oneshot
 ├── mailcow-monitor.timer             # systemd timer (60s)
-├── LICENSE                           # AGPLv3
+├── LICENSE                           # MIT
 ├── MAILCOW-MONITORING-DOKU.md        # Ausführliche Dokumentation
 ├── CHANGELOG.md
 └── README.md
@@ -222,7 +236,7 @@ sudo ./uninstall.sh
 
 ## Lizenz
 
-AGPLv3 — der Code muss Open Source bleiben und der Autor muss genannt werden.
+MIT — frei nutzbar, änderbar und weitergebbar; der Copyright-Hinweis muss erhalten bleiben.
 Siehe [LICENSE](LICENSE) für Details.
 
 **© 2026 Alexander Fox | PlaNet Fox** — Created with Open Source and ❤

@@ -6,7 +6,7 @@
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft DANE/TLSA, MTA-STS, TLS-RPT, BIMI für alle Domains
 #  Usage:      check_security_audit.sh [dane|mta_sts|tls_rpt|bimi|detail|score]
-#  License:    AGPL-3.0-or-later (see LICENSE)
+#  License:    MIT (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 

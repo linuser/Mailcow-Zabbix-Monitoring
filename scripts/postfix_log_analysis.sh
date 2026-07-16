@@ -5,7 +5,7 @@
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Analysiert Postfix Logs nach SASL, Relay, TLS, Spam, Virus und Postscreen Events
-#  License:    AGPL-3.0-or-later (see LICENSE)
+#  License:    MIT (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 CONTAINER=$(docker ps --filter "name=postfix" --format "{{.Names}}" 2>/dev/null | grep -i mailcow | head -1)
@@ -13,7 +13,11 @@ if [ -z "$CONTAINER" ]; then
     echo 0
     exit 0
 fi
-CACHE_FILE="/var/tmp/postfix_log_analysis.cache"
+# Verzeichnis anlegen: im Normalbetrieb macht das systemd (RuntimeDirectory),
+# bei einem manuellen Aufruf existiert es aber nicht.
+mkdir -p /run/mailcow-monitor 2>/dev/null || true
+
+CACHE_FILE="/run/mailcow-monitor/postfix_log.cache"
 CACHE_MAX_AGE=60  # 60 Sekunden Cache
 
 # Cache aktualisieren wenn nötig

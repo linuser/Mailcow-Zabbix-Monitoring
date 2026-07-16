@@ -5,7 +5,7 @@
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft alle 246 UserParameters via zabbix_get
-#  License:    AGPL-3.0-or-later (see LICENSE)
+#  License:    MIT (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 
@@ -43,9 +43,9 @@ zabbix_get -s 127.0.0.1 -k agent.ping >/dev/null 2>&1 || { echo -e "${RED}✗ Ag
 echo -e "  ${GREEN}✓${NC} Agent responding"
 PARAMS=$(grep -c '^UserParameter' /etc/zabbix/zabbix_agent2.d/mailcow*.conf 2>/dev/null)
 echo -e "  ${GREEN}✓${NC} $PARAMS UserParameters loaded"
-if [ -f /var/tmp/mailcow-monitor.json ]; then
-    AGE=$(( $(date +%s) - $(stat -c %Y /var/tmp/mailcow-monitor.json) ))
-    KEYS=$(python3 -c "import json; print(len(json.load(open('/var/tmp/mailcow-monitor.json'))))" 2>/dev/null)
+if [ -f /run/mailcow-monitor/monitor.json ]; then
+    AGE=$(( $(date +%s) - $(stat -c %Y /run/mailcow-monitor/monitor.json) ))
+    KEYS=$(python3 -c "import json; print(len(json.load(open('/run/mailcow-monitor/monitor.json'))))" 2>/dev/null)
     echo -e "  ${GREEN}✓${NC} Collector: $KEYS keys, ${AGE}s old"
 fi
 echo ""

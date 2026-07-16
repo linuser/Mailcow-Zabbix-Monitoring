@@ -2,6 +2,184 @@
 
 > Entries from v1.2 onwards are written in English. Earlier entries are in German.
 
+## v1.2.1 (2026-07-16)
+
+### Fixed — user macros were defined but never used
+- The template shipped 4 user macros (`{$MAILCOW.QUEUE.WARN}`,
+  `{$MAILCOW.CERT.WARN}`, `{$MAILCOW.DISK.WARN}`, `{$MAILCOW.RBL.CRITICAL}`) that
+  **not a single trigger referenced**. All thresholds were hardcoded, and the
+  macro values matched the literals exactly — so they were meant to be wired up
+  and never were. Setting `{$MAILCOW.DISK.WARN}` to 95 changed nothing, without
+  any error: the template looked configurable without being so.
+  All 9 affected triggers now use their macro.
+- Wiring only the problem side would have broken the hysteresis triggers: with
+  `{$MAILCOW.QUEUE.WARN}` set to 20, the hardcoded recovery threshold (`<30`)
+  would sit *above* the problem threshold and the trigger would flap. Every
+  threshold therefore got its counterpart: `{$MAILCOW.QUEUE.RECOVER}` (30),
+  `{$MAILCOW.DISK.RECOVER}` (85), `{$MAILCOW.CERT.CRIT}` (7).
+- `vmail` warns earlier than the other filesystems (85/80 instead of 90/85) and
+  got its own pair: `{$MAILCOW.DISK.VMAIL.WARN}` / `{$MAILCOW.DISK.VMAIL.RECOVER}`.
+- All macros now carry a description.
+
+### Fixed — {ITEM.VALUE} in trigger names
+- 28 trigger names embedded `{ITEM.VALUE}`. Zabbix guidelines are explicit that
+  these macros belong in the operational data field: a problem name is generated
+  once at event creation, so the value shown there freezes and goes stale, while
+  `opdata` keeps updating. Names are now static and describe the condition; the
+  live value moved to `opdata` (e.g. "TLS certificate expires soon (443)" with
+  opdata `{ITEM.LASTVALUE1} days left`).
+
+### Changed — Zabbix template guidelines (triggers)
+- **`{HOST.NAME}` removed from 60 trigger names.** The guidelines are explicit:
+  "Trigger names should not use the {HOST.NAME} macro to keep names shorter."
+  Zabbix already shows the host in its own column on every problem view.
+- **`event_name` added to the 9 macro-driven triggers.** After wiring the macros,
+  the names still claimed fixed thresholds ("Root disk >90%") while the
+  expression compared against `{$MAILCOW.DISK.WARN}` — setting the macro to 95
+  would have produced a problem name insisting on 90. The name is now generic and
+  `event_name` resolves the macro, so the alert always states the real threshold.
+- **`scope` tags on all 63 triggers.** The guidelines require at least one scope
+  tag per trigger from a fixed set. Distribution: security 17, availability 15,
+  notice 14, performance 11, capacity 8. The 5 existing `scope: anomaly` tags
+  were replaced — `anomaly` is not part of the model. `component` is not
+  duplicated on triggers: problem events inherit tags from the whole chain
+  (template → host → item → trigger), and the items already carry it.
+- **Template tags** `class: software` and `target: mailcow` added (at least one
+  of each is mandatory).
+
+- **LLD trigger prototypes pulled along.** The first pass only walked
+  `items` and missed `discovery_rules[*].trigger_prototypes`, which would have
+  left 63 conformant triggers next to 8 non-conformant prototypes in the same
+  template. All 8 now drop `{HOST.NAME}`, carry a scope tag and use macros for
+  their thresholds (`{$MAILCOW.QUOTA.WARN}` / `.CRIT`,
+  `{$MAILCOW.SYNCJOB.AGE.MAX}`, `{$MAILCOW.CONTAINER.MEM.MAX}`).
+- **Trigger dependencies rebuilt.** Zabbix identifies a dependency target by
+  name *and* expression — renaming the triggers left all 5 dependencies pointing
+  at triggers that no longer existed, which would have failed the import. They
+  are now regenerated from the current state instead of remapped, and
+  `fix_guidelines.py` verifies that every dependency resolves.
+
+### Added
+- `tools/fix_guidelines.py` — same idempotent, self-verifying pattern as
+  `fix_macros.py`: it re-quotes `'y'` and the hex colours after dumping, checks
+  that every dependency resolves, and fails if any trigger has no scope.
+
+### Security
+- **The Mailcow database password was readable by any local user.** The collector
+  ran `docker exec -e MYSQL_PWD=<secret> ...` — the docstring claimed "password
+  not on the command line", which only held for the `mysql` call *inside* the
+  container. The `docker` invocation is a host process, and `/proc/<pid>/cmdline`
+  is mode 0444: world-readable regardless of owner. With the collector running
+  every 60 seconds across up to 6 database modules per run, a `while :; do cat
+  /proc/*/cmdline; done` loop from an unprivileged account captured the password
+  within minutes. The password now goes into a 0600 file under
+  `/run/mailcow-monitor/` and is passed via `docker exec --env-file`; only the
+  path appears in argv.
+- **Python code injection in `mailcow-reader.sh`.** The key was interpolated
+  straight into the Python source: `d.get('${KEY}')` inside a double-quoted
+  here-string. Any caller could execute arbitrary Python —
+  `mailcow-reader.sh "x') or open('/tmp/pwn','w').write('x') or d.get('y"`
+  created the file, verified against both the old and the fixed version. The
+  template's own UserParameters only ever pass fixed keys from the config, and
+  none of them are parameterised with `[*]`, so this was not reachable from the
+  Zabbix server — but the script sits executable in `/usr/local/bin` and runs
+  with the caller's privileges. Path and key now go through `argv`; the Python
+  program is single-quoted, so the shell substitutes nothing into it.
+- **All state moved from `/var/tmp` to `/run/mailcow-monitor`.** `/var/tmp` is
+  world-writable (`drwxrwxrwt`); root wrote its JSON and caches there and read
+  them back. Only the kernel sysctls `fs.protected_symlinks` and
+  `protected_regular` stood between that and an arbitrary-file-write as root —
+  that is luck, not a defence. systemd now creates the directory via
+  `RuntimeDirectory=` as `drwxr-xr-x root:root`.
+  - `RuntimeDirectoryPreserve=yes` is mandatory here, not a detail: systemd
+    deletes a RuntimeDirectory when the unit stops, which for `Type=oneshot` is
+    after *every* run — the JSON would vanish before the agent reads it, silently.
+  - The collector creates the directory itself as a fallback, so a manual
+    `sudo python3 mailcow-collector.py` still works.
+  - `install.sh` and `update.sh` remove the old `/var/tmp` files from existing
+    installations.
+- **`update.sh` never installed the systemd units.** It only replaced the scripts
+  under `/usr/local/bin`, so anyone updating would have received the new collector
+  next to the old, unhardened unit — no `RuntimeDirectory`, no hardening. Thanks
+  to the collector's fallback it would even have worked, just without any of the
+  protection: an update reporting success while delivering half of it. It now
+  installs both units, reports what changed and reloads systemd.
+- **systemd unit hardened.** It previously had no restrictions whatsoever while
+  running as root, driving Docker and executing Mailcow's `update.sh`. Added
+  `NoNewPrivileges`, `ProtectHome`, `ProtectKernelTunables`, `ProtectKernelModules`,
+  `ProtectKernelLogs`, `ProtectControlGroups`, `ProtectClock`, `RestrictSUIDSGID`,
+  `RestrictRealtime`, `RestrictNamespaces`, `LockPersonality`, `PrivateTmp` and
+  `ProtectSystem=full`.
+  - `PrivateTmp` only became safe *because* the state moved to `/run` — it
+    isolates `/tmp` and `/var/tmp` and would have hidden the old location.
+  - `ProtectSystem=full` rather than `strict`: Mailcow's `update.sh --check-tags`
+    performs git operations in `/opt`, which `strict` would block — and the
+    collector would have written 0 for it without a word.
+
+### Fixed — diagnostics and dead code
+- **The reader threw away its own diagnosis.** The shell wrapper replaced
+  Python's precise `Key not found` with a generic `Read error`, and reported a
+  legitimately empty value as an error. Python's message and exit code are now
+  passed through: missing key → `Key not found` (rc 1), empty value → empty
+  string (rc 0), broken JSON → `Read error`.
+- **`tools/fix_guidelines.py` raised a false alarm on a second run.** Its lookup
+  tables are keyed by the original trigger names, so after the rename it no
+  longer recognised its own output: it reported "no scope" for 5 triggers that
+  have one, processed 1 of 8 LLD prototypes, and exited 1 — a red CI run with no
+  cause. It is now idempotent: two runs produce identical output and exit 0.
+- **Removed `docker_exec_int()`** from the collector — 0 callers.
+
+### Reviewed and found sound
+- No SQL injection and no command injection: `mysql_exec` passes an argument list
+  (no `shell=True`), and values from the database (domains, mailboxes, sync job
+  names) never reach a shell. A domain named `foo.de; rm -rf /` does nothing.
+- The password is not written to the JSON.
+- `UnsafeUserParameters=0`, no sudo rules for Zabbix.
+- The JSON is written atomically (`.tmp` + `os.rename`).
+
+### Changed — licence
+- Relicensed from AGPL-3.0-or-later to **MIT**. The Zabbix community template
+  repository publishes exclusively under MIT and does not accept GPL-style
+  licences, so this is the prerequisite for submitting the template there.
+  Sole copyright holder: Alexander Fox (PlaNet Fox) — no third-party code.
+
+### Added
+- `tools/fix_macros.py` — wires the macros and moves `{ITEM.VALUE}` to `opdata`,
+  idempotent. It re-quotes the `'y'` widget keys and hex colours after dumping
+  and verifies the counts: `yaml.safe_dump` silently strips both, which would
+  reintroduce the v1.2 import blocker.
+
+### Added — the collector now admits when it cannot measure
+- **`mailcow.db.reachable` (new item + trigger, HIGH).** Running the collector on
+  a machine with no Docker, no Mailcow and no mail server at all produced:
+  `OK: 246 metrics written` and `mailcow.collector.errors = 0`. Full success
+  reported, nothing measured — the exact failure this project exists to catch,
+  still present in its own collector.
+  The mechanism: `errors` only counts module *exceptions*. `mysql_exec` returns an
+  empty string on any failure, `collect_mailbox()` then returns its zero defaults
+  without raising, and the module counts as successful. So a database outage was
+  invisible: `mailbox.total=0`, `domain.total=0`, `quarantine=0`,
+  `collector.errors=0`, no alert.
+  The new item probes with `SELECT 1` and reports whether an answer actually came
+  back. This is also the signal that catches `docker exec --env-file` not being
+  supported — the one deployment risk that could not be tested off-host.
+
+### Known issues
+- `collector.errors` still counts only crashes, not "could not measure". Modules
+  that return their zero defaults on failure still count as successful. Beyond the
+  database, this affects every module whose container is missing. A per-module
+  "measured" signal is planned for v1.3; `mailcow.db.reachable` covers the case
+  with the most metrics behind it.
+- Not yet conformant to the Zabbix template guidelines: data is collected via 246
+  individual UserParameters instead of one master item with dependent items and
+  preprocessing; the visible template name carries a version; the template group
+  is `Templates/Mailcow` instead of one of the recommended categories; macro names
+  do not follow the `{$[<NAMESPACE>.]<METRIC_NAME>[.MAX|.MIN][.WARN|.CRIT]}`
+  pattern; 50 triggers and 207 items have no description.
+- Two hysteresis triggers still use hardcoded thresholds on both sides
+  (`fail2ban.banned` 20/10, `backup.age` 48/24). Both sides are hardcoded, so
+  they are consistent — but they are not tunable.
+
 ## v1.2 (2026-07-16)
 
 ### Fixed — triggers were never imported (critical)
@@ -116,7 +294,7 @@
 ### Changed — licence
 - Switched from **GPLv3 to AGPL-3.0-or-later**, matching Zabbix since 7.0.
 - Unified licence headers: 10 of 15 files still said `License: GPLv3` while the
-  LICENSE file was already AGPL-3.0.
+  LICENSE file had already changed.
 
 ### Added — tools
 - `update.sh`: updates the host side, with backup, `--check`, `--rollback`,

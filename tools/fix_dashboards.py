@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 # Copyright (C) 2026 Alexander Fox (PlaNet Fox)
 """
 Rebuild svggraph dashboard widgets for Zabbix 7.0.

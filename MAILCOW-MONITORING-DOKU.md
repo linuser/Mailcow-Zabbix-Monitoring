@@ -15,9 +15,9 @@
 │  Schreibt → JSON-Dateien     │
 └──────────┬───────────────────┘
            │
-     /var/tmp/mailcow-monitor.json          (Haupt-Cache, 60s)
-     /var/tmp/mailcow-monitor-slow.json     (Slow-Cache, 1h)
-     /var/tmp/mailcow-monitor-mailflow.json (Mailflow-Cache, 5m)
+     /run/mailcow-monitor/monitor.json          (Haupt-Cache, 60s)
+     /run/mailcow-monitor/monitor-slow.json     (Slow-Cache, 1h)
+     /run/mailcow-monitor/monitor-mailflow.json (Mailflow-Cache, 5m)
            │
 ┌──────────┴───────────────────┐
 │  Zabbix Agent 2              │  läuft als ZABBIX
@@ -321,7 +321,7 @@ in Bearbeitung".
 deshalb einen eigenen Cache, getrennt vom 1h-Slow-Cache der übrigen Module:
 
 ```
-/var/tmp/mailcow-monitor-mailflow.json   (max. 5 Minuten alt)
+/run/mailcow-monitor/monitor-mailflow.json   (max. 5 Minuten alt)
 ```
 
 Ist der Cache frisch, liefert der Collector ihn direkt aus, ohne pflogsumm
@@ -431,7 +431,7 @@ Installationen alarmieren dank Mindest-Baseline (`trendavg > 5`) nicht sofort.
 
 ## Lizenz
 
-**AGPL-3.0-or-later** — Dieser Code muss Open Source bleiben. Bei Nutzung, Änderung oder Weitergabe muss der ursprüngliche Autor genannt werden.
+**MIT** — frei nutzbar, änderbar und weitergebbar, auch kommerziell. Einzige Bedingung: der Copyright-Hinweis bleibt erhalten.
 
 © 2026 Alexander Fox | PlaNet Fox — https://github.com/linuser/Mailcow-Zabbix-Monitoring
 

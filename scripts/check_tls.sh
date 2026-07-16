@@ -6,7 +6,7 @@
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft TLS-Zertifikate auf HTTPS/IMAPS/Submission Ports
 #  Usage:      check_tls.sh [port_check|cert_days|cert_raw] [port]
-#  License:    AGPL-3.0-or-later (see LICENSE)
+#  License:    MIT (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 

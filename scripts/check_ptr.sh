@@ -5,11 +5,15 @@
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft ob der PTR-Record der öffentlichen IP auf den MAILCOW_HOSTNAME zeigt
-#  License:    AGPL-3.0-or-later (see LICENSE)
+#  License:    MIT (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 MAILCOW_DIR="/opt/mailcow-dockerized"
-CACHE_FILE="/var/tmp/ptr_check.cache"
+# Verzeichnis anlegen: im Normalbetrieb macht das systemd (RuntimeDirectory),
+# bei einem manuellen Aufruf existiert es aber nicht.
+mkdir -p /run/mailcow-monitor 2>/dev/null || true
+
+CACHE_FILE="/run/mailcow-monitor/ptr.cache"
 CACHE_MAX_AGE=3600  # 1 Stunde
 
 # Cache prüfen

@@ -5,7 +5,7 @@
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Installiert Collector, Reader, Configs und systemd Units
-#  License:    AGPL-3.0-or-later (see LICENSE)
+#  License:    MIT (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 set -e
@@ -65,6 +65,17 @@ rm -f /usr/local/bin/mailcow-collector.sh
 echo -e "  ${GREEN}✓ mailcow-collector.sh (Bash) removed${NC}"
 
 # Alte Scripts aus v4.0-v4.3 aufräumen
+# Alte Zustandsdateien aus /var/tmp entfernen. Bis v1.2.1 lag der gesamte
+# Zustand dort - weltschreibbar. Ab v1.2.1 liegt er in /run/mailcow-monitor,
+# das systemd anlegt und das root gehoert. Die Reste sonst blieben liegen.
+for OLD_STATE in mailcow-monitor.json mailcow-monitor.json.tmp \
+                 mailcow-monitor-slow.json mailcow-monitor-mailflow.json \
+                 rbl_check.cache rbl_check_detail.cache ptr_check.cache \
+                 postfix_log_analysis.cache rspamd_stats.cache \
+                 dovecot_check.cache; do
+    rm -f "/var/tmp/$OLD_STATE"
+done
+
 # dovecot_check.sh: seit #opt10 macht collect_dovecot() alles inline via docker
 # exec. Das Script wurde nie aufgerufen, lag aber weiter in /usr/local/bin.
 for OLD_SCRIPT in dovecot_check.sh \
@@ -79,7 +90,7 @@ for OLD_SCRIPT in dovecot_check.sh \
 done
 
 # Alten Slow-Cache löschen (Format hat sich geändert)
-rm -f /var/tmp/mailcow-monitor-slow.json
+rm -f /run/mailcow-monitor/monitor-slow.json
 echo -e "  ${GREEN}✓ Slow cache reset${NC}"
 
 # Bestehende Scripts aktualisieren
@@ -206,7 +217,7 @@ else
 fi
 
 # JSON-File für zabbix lesbar
-chmod 644 /var/tmp/mailcow-monitor.json 2>/dev/null
+chmod 644 /run/mailcow-monitor/monitor.json 2>/dev/null
 
 # ====================================================================
 echo ""
@@ -238,7 +249,7 @@ echo -e "${BLUE}║         INSTALLATION COMPLETE            ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "  ${GREEN}✓ Collector: systemd timer (every 60s as root)${NC}"
-echo -e "  ${GREEN}✓ Reader: /var/tmp/mailcow-monitor.json${NC}"
+echo -e "  ${GREEN}✓ Reader: /run/mailcow-monitor/monitor.json${NC}"
 echo -e "  ${GREEN}✓ Zabbix: reads JSON only (no privileges required)${NC}"
 echo ""
 echo -e "  Security:"
@@ -250,7 +261,7 @@ echo -e "  Test: $PASS passed, $ERRORS failed"
 echo ""
 echo -e "  Commands:"
 echo -e "    systemctl status mailcow-monitor.timer"
-echo -e "    cat /var/tmp/mailcow-monitor.json | python3 -m json.tool | head -20"
+echo -e "    cat /run/mailcow-monitor/monitor.json | python3 -m json.tool | head -20"
 echo -e "    zabbix_get -s 127.0.0.1 -k mailcow.rspamd.scanned"
 echo ""
 echo -e "  ${YELLOW}⚠ Zabbix Template:${NC}"

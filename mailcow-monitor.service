@@ -1,5 +1,6 @@
 [Unit]
 Description=Mailcow Monitoring Collector
+Documentation=https://github.com/linuser/Mailcow-Zabbix-Monitoring
 After=docker.service
 Requires=docker.service
 
@@ -9,3 +10,44 @@ ExecStart=/usr/bin/python3 /usr/local/bin/mailcow-collector.py
 User=root
 Nice=10
 TimeoutStartSec=120
+
+# Zustandsverzeichnis. Frueher lag alles in /var/tmp - weltschreibbar, sticky.
+# Root schrieb dort hin und las die Caches wieder ein; gegen den klassischen
+# Symlink-Angriff schuetzten nur die Kernel-Sysctls protected_symlinks und
+# protected_regular. Das ist Glueck, keine Verteidigung.
+#
+# RuntimeDirectoryPreserve=yes ist PFLICHT und keine Feinheit: systemd loescht
+# ein RuntimeDirectory, sobald die Unit stoppt. Bei Type=oneshot ist das nach
+# JEDEM Lauf - die JSON waere weg, bevor der Zabbix-Agent sie liest, und zwar
+# ohne jede Fehlermeldung.
+RuntimeDirectory=mailcow-monitor
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+
+# Der Collector laeuft als root, steuert Docker, fuehrt Mailcows update.sh aus
+# und fragt DNS ab. Ohne Einschraenkung ist jede Luecke darin sofort
+# Vollzugriff. Die folgenden Optionen kosten nichts und nehmen viel weg.
+NoNewPrivileges=yes
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+
+# Erst durch den Umzug nach /run ist PrivateTmp gefahrlos: es isoliert /tmp und
+# /var/tmp - haette also die alte Ablage unsichtbar gemacht.
+PrivateTmp=yes
+
+# ProtectSystem=full statt strict: /usr, /boot und /etc werden read-only, /opt
+# bleibt beschreibbar. Mailcows update.sh --check-tags macht dort
+# Git-Operationen; mit strict wuerde der Update-Check scheitern - und der
+# Collector dafuer stillschweigend 0 schreiben.
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

@@ -6,7 +6,7 @@
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Sammelt 246 Metriken aus 22 Modulen (Docker, MySQL, DNS,
 #               TLS, Rspamd, ClamAV, Postscreen, Bayes u.v.m.) in JSON
-#  License:    AGPL-3.0-or-later (see LICENSE)
+#  License:    MIT (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 """
@@ -30,11 +30,12 @@ from pathlib import Path
 # ====================================================================
 
 MAILCOW_DIR = "/opt/mailcow-dockerized"
-OUTPUT = "/var/tmp/mailcow-monitor.json"
+RUNTIME_DIR = "/run/mailcow-monitor"
+OUTPUT = "/run/mailcow-monitor/monitor.json"
 OUTPUT_TMP = OUTPUT + ".tmp"
-SLOW_CACHE = "/var/tmp/mailcow-monitor-slow.json"
+SLOW_CACHE = "/run/mailcow-monitor/monitor-slow.json"
 SLOW_MAX_AGE = 3600  # Sekunden
-MAILFLOW_CACHE = "/var/tmp/mailcow-monitor-mailflow.json"
+MAILFLOW_CACHE = "/run/mailcow-monitor/monitor-mailflow.json"
 MAILFLOW_MAX_AGE = 300  # 5 Minuten
 
 # ====================================================================
@@ -43,6 +44,21 @@ MAILFLOW_MAX_AGE = 300  # 5 Minuten
 
 def now():
     return int(time.time())
+
+
+def ensure_runtime_dir():
+    """Zustandsverzeichnis anlegen, falls es fehlt.
+
+    Im Normalbetrieb erledigt das systemd via RuntimeDirectory=. Bei einem
+    manuellen Aufruf (sudo python3 mailcow-collector.py) existiert es nicht -
+    ohne dieses Fallback wuerde der Lauf am Schreiben scheitern.
+    """
+    try:
+        os.makedirs(RUNTIME_DIR, mode=0o755, exist_ok=True)
+        os.chmod(RUNTIME_DIR, 0o755)
+    except OSError as e:
+        print(f"FEHLER: {RUNTIME_DIR} nicht anlegbar: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def run(cmd, timeout=30, default=""):
@@ -79,23 +95,64 @@ def docker_exec(container, cmd, timeout=15, default=""):
     return run(f'docker exec "{container}" {cmd}', timeout, default)
 
 
-def docker_exec_int(container, cmd, timeout=15, default=0):
-    """Befehl in Docker-Container ausführen, Ergebnis als int."""
-    val = docker_exec(container, cmd, timeout, str(default))
-    try:
-        return int(val)
-    except (ValueError, TypeError):
-        return default
+
+
+def _db_env_file(dbpass):
+    """Passwort in eine 0600-Datei schreiben und den Pfad zurueckgeben.
+
+    Vorher stand es auf der docker-Kommandozeile:
+        docker exec -e MYSQL_PWD=<geheim> mysql-mailcow-1 mysql ...
+    Der Kommentar behauptete "Passwort nicht auf Kommandozeile" - das galt nur
+    fuer den mysql-Aufruf INNERHALB des Containers. Der docker-Aufruf ist ein
+    Prozess auf dem Host, und /proc/<pid>/cmdline hat Modus 0444: jeder lokale
+    Nutzer konnte das Mailcow-DB-Passwort mitlesen. Der Collector laeuft alle
+    60 Sekunden, eine Leseschleife braucht also keine Geduld.
+
+    docker exec --env-file liest die Variablen aus der Datei; in argv steht nur
+    noch der Pfad.
+    """
+    path = os.path.join(RUNTIME_DIR, "db.env")
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(f"MYSQL_PWD={dbpass}\n")
+    return path
+
+
+_ENV_FILE = None
 
 
 def mysql_exec(container, dbpass, sql, timeout=15, default=""):
-    """MySQL-Query via docker exec mit MYSQL_PWD (Passwort nicht auf Kommandozeile)."""
+    """MySQL-Query via docker exec. Passwort kommt aus einer 0600-Datei,
+    damit es nicht in der (weltlesbaren) Prozessliste landet."""
+    global _ENV_FILE
     if not container or not dbpass:
         return default
+    if _ENV_FILE is None:
+        try:
+            _ENV_FILE = _db_env_file(dbpass)
+        except OSError:
+            return default
     return run_cmd(
-        ["docker", "exec", "-e", f"MYSQL_PWD={dbpass}", container,
+        ["docker", "exec", "--env-file", _ENV_FILE, container,
          "mysql", "-u", "mailcow", "mailcow", "-Nse", sql],
         timeout=timeout, default=default)
+
+
+def db_reachable(container, dbpass):
+    """Ehrliches Signal: kam eine Antwort aus der Mailcow-Datenbank?
+
+    Ohne das hier ist ein DB-Ausfall komplett unsichtbar. Die Module fangen nur
+    Exceptions ab; mysql_exec liefert bei jedem Fehler still einen Leerstring,
+    collect_mailbox() gibt daraufhin seine Nullen zurueck - ohne Exception, also
+    ohne Eintrag in collector.errors. Ergebnis: mailbox.total=0, domain.total=0,
+    quarantine=0 und collector.errors=0. Ein Monitoring, das meldet, es sei alles
+    in Ordnung, waehrend es die Datenbank gar nicht erreicht.
+
+    Faellt z.B. auf, wenn docker exec --env-file nicht unterstuetzt wird.
+    """
+    if not container or not dbpass:
+        return 0
+    return 1 if mysql_exec(container, dbpass, "SELECT 1", timeout=10) == "1" else 0
 
 
 def read_config():
@@ -1906,6 +1963,7 @@ def _count_total(text, keyword):
 # ====================================================================
 
 def main():
+    ensure_runtime_dir()
     start_time = time.time()
     errors = []  # #10: Fehler-Tracking pro Modul
 
@@ -1948,6 +2006,8 @@ def main():
         ("mailflow",     lambda: collect_mailflow(ct["postfix"])),  # #1: eigener 5-Min-Cache
         ("slow",         lambda: collect_slow()),                    # #6: parallelisiert
     ]
+
+    metrics["mailcow.db.reachable"] = db_reachable(ct["mysql"], config["dbpass"])
 
     for name, func in modules:
         t0 = time.time()

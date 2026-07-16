@@ -49,9 +49,12 @@ zabbix_export:
       triggers:
       - uuid: 620ed6bcee2147ad87dc437239089428
         expression: last(/mailcow_complete_monitoring_v45/postfix.process.running)=0
-        name: 'Mailcow: Postfix not running on {HOST.NAME}'
+        name: 'Mailcow: Postfix not running'
         priority: DISASTER
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: b8c2d683081f418c830545da392e91a1
       name: 'Mailcow: Mail queue size'
       type: ZABBIX_ACTIVE
@@ -67,13 +70,19 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 22dce308b2da45488078e2d225216f4b
-        expression: min(/mailcow_complete_monitoring_v45/postfix.pfmailq,5m)>50
-        name: 'Mailcow: Mail queue too large on {HOST.NAME}'
-        recovery_expression: max(/mailcow_complete_monitoring_v45/postfix.pfmailq,5m)<30
+        expression: min(/mailcow_complete_monitoring_v45/postfix.pfmailq,5m)>{$MAILCOW.QUEUE.WARN}
+        name: 'Mailcow: Mail queue is too large'
+        recovery_expression: max(/mailcow_complete_monitoring_v45/postfix.pfmailq,5m)<{$MAILCOW.QUEUE.RECOVER}
         priority: HIGH
         manual_close: 'YES'
         description: Mail queue has >50 messages for 5 minutes
         recovery_mode: RECOVERY_EXPRESSION
+        event_name: 'Mailcow: Mail queue is too large (over {$MAILCOW.QUEUE.WARN} mails for 5m)'
+        tags:
+        - tag: scope
+          value: capacity
+        - tag: scope
+          value: performance
     - uuid: f57c5993aa4c42d185db01fc1127d96e
       name: 'Mailcow: SMTP connections'
       type: ZABBIX_ACTIVE
@@ -143,9 +152,12 @@ zabbix_export:
       triggers:
       - uuid: 27b7073fb5ae4b6d83df608c510406da
         expression: sum(/mailcow_complete_monitoring_v45/postfix.log.errors,1h)>10
-        name: 'Mailcow: Postfix errors detected on {HOST.NAME}'
+        name: 'Mailcow: Postfix errors detected'
         priority: WARNING
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: ffbbf05161ae4cf28e85068e33a89ba5
       name: 'Mailcow: Log warnings (5min)'
       type: ZABBIX_ACTIVE
@@ -348,10 +360,14 @@ zabbix_export:
       triggers:
       - uuid: 23af2313c2e941c9b55730fed5ff9cec
         expression: last(/mailcow_complete_monitoring_v45/postfix.postscreen.reject)>100
-        name: 'Mailcow: Postscreen rejecting heavily ({ITEM.VALUE}) on {HOST.NAME}'
+        name: 'Mailcow: Postscreen rejecting heavily'
         priority: WARNING
         description: Mehr als 100 Postscreen-Rejects in 5 Minuten — möglicher Angriff
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} rejects/h'
+        tags:
+        - tag: scope
+          value: security
     - uuid: fe30ac151f14420c920abf3738922d20
       name: 'Mailcow: Postscreen DNSBL hits'
       type: ZABBIX_ACTIVE
@@ -425,9 +441,12 @@ zabbix_export:
       triggers:
       - uuid: 5c86d0e8aaf941dc880b76ed0340892f
         expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.https.check)=0
-        name: 'Mailcow: HTTPS not reachable on {HOST.NAME}'
+        name: 'Mailcow: HTTPS not reachable'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: 9417603b794e43e3804419bb5cc892b7
       name: 'Mailcow: Submission (587) reachable'
       type: ZABBIX_ACTIVE
@@ -446,9 +465,12 @@ zabbix_export:
       triggers:
       - uuid: e777234570e74d4b8832dca84073f439
         expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.submission.check)=0
-        name: 'Mailcow: SMTP submission not reachable on {HOST.NAME}'
+        name: 'Mailcow: SMTP submission not reachable'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: 8f89f4c6443147e5877c73570f52a2cd
       name: 'Mailcow: IMAPS (993) reachable'
       type: ZABBIX_ACTIVE
@@ -467,9 +489,12 @@ zabbix_export:
       triggers:
       - uuid: 3b5cc9d346274ce88a32b9579dafc74f
         expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.imaps.check)=0
-        name: 'Mailcow: IMAPS not reachable on {HOST.NAME}'
+        name: 'Mailcow: IMAPS not reachable'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: 375b6cf1df7e40f982086336bfef2715
       name: 'Mailcow: Web UI accessible'
       type: ZABBIX_ACTIVE
@@ -488,9 +513,12 @@ zabbix_export:
       triggers:
       - uuid: 48030a12075b48a288ed825ce69a08a0
         expression: last(/mailcow_complete_monitoring_v45/mailcow.ui.check)=0
-        name: 'Mailcow: Web UI not accessible on {HOST.NAME}'
+        name: 'Mailcow: Web UI not accessible'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: 30061fab065f40ed827784e216c85217
       name: 'Mailcow: TLS cert days remaining (443)'
       type: ZABBIX_ACTIVE
@@ -506,10 +534,15 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 91c96995900040a686f6b3d6979d2b68
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.cert.days.443)<14
-        name: 'Mailcow: TLS cert expires in {ITEM.VALUE} days (443) on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.cert.days.443)<{$MAILCOW.CERT.WARN}
+        name: 'Mailcow: TLS certificate expires soon (443)'
         priority: HIGH
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} days left'
+        event_name: 'Mailcow: TLS certificate expires soon (less than {$MAILCOW.CERT.WARN} days left, port 443)'
+        tags:
+        - tag: scope
+          value: security
     - uuid: 9b1486ed4b724e0f8176c877727b5ab3
       name: 'Mailcow: TLS cert details (443)'
       type: ZABBIX_ACTIVE
@@ -591,11 +624,15 @@ zabbix_export:
       triggers:
       - uuid: 57372933d4cd4dd88ce39f5d481c03e2
         expression: last(/mailcow_complete_monitoring_v45/mailcow.security.fail2ban.banned)>20
-        name: 'Mailcow: High number of banned IPs ({ITEM.VALUE}) on {HOST.NAME}'
+        name: 'Mailcow: High number of banned IPs'
         recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.security.fail2ban.banned)<10
         priority: WARNING
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
+        opdata: '{ITEM.LASTVALUE1} IPs banned'
+        tags:
+        - tag: scope
+          value: security
     - uuid: abcebbfe9c7f49008be93fc3af839f03
       name: 'Mailcow: Fail2Ban Postfix banned IPs'
       type: ZABBIX_ACTIVE
@@ -650,11 +687,16 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 6e43aecadbf5478286fcec82efb716bc
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.security.rbl.listed)>0
-        name: 'Mailcow: IP on {ITEM.VALUE} RBL list(s): {?last(/mailcow_complete_monitoring_v45/mailcow.security.rbl.detail)} on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.security.rbl.listed)>={$MAILCOW.RBL.CRITICAL}
+        name: 'Mailcow: IP listed on RBL'
         priority: DISASTER
         manual_close: 'YES'
         description: 'Mail server IP is listed on RBL blacklist(s)! Check: mxtoolbox.com/blacklists'
+        opdata: '{ITEM.LASTVALUE1} list(s): {?last(/mailcow_complete_monitoring_v45/mailcow.security.rbl.detail)}'
+        event_name: 'Mailcow: IP listed on {$MAILCOW.RBL.CRITICAL} or more RBLs'
+        tags:
+        - tag: scope
+          value: security
     - uuid: 1f9c0ac38aa14e61810f5857a53b971f
       name: 'Mailcow: RBL Blacklist details'
       type: ZABBIX_ACTIVE
@@ -685,9 +727,12 @@ zabbix_export:
       triggers:
       - uuid: 00ae22db91794cf98b74cab77dfb3dc6
         expression: last(/mailcow_complete_monitoring_v45/mailcow.security.open.relay)=1
-        name: 'Mailcow: OPEN RELAY DETECTED on {HOST.NAME}'
+        name: 'Mailcow: OPEN RELAY DETECTED'
         priority: DISASTER
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: security
     - uuid: 3a7883c799d445328f151c2be252113b
       name: 'Mailcow: DANE/TLSA record exists'
       type: ZABBIX_ACTIVE
@@ -769,10 +814,14 @@ zabbix_export:
       triggers:
       - uuid: 6ecfa026caa74c90958dcc5c1d6e2d90
         expression: last(/mailcow_complete_monitoring_v45/mailcow.security.audit.score)<3
-        name: 'Mailcow: Security audit score critically low ({ITEM.VALUE}/7) on {HOST.NAME}'
+        name: 'Mailcow: Security audit score critically low'
         priority: HIGH
         description: Less than 3/7 mail security standards configured (SPF+DKIM+DMARC+DANE+MTA-STS+TLS-RPT+BIMI)
         manual_close: 'YES'
+        opdata: score {ITEM.LASTVALUE1} of 7
+        tags:
+        - tag: scope
+          value: security
     - uuid: f7b59cc3d27e4f45a26168ac2bc87d2a
       name: 'Mailcow: Security audit details'
       type: ZABBIX_ACTIVE
@@ -805,9 +854,12 @@ zabbix_export:
       triggers:
       - uuid: c1575188d4a246ed898d13f51e05eac4
         expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.spf.exists)=0
-        name: 'Mailcow: SPF record missing for one or more domains on {HOST.NAME}'
+        name: 'Mailcow: SPF record missing for one or more domains'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: security
     - uuid: f16ffea682b34f638b45180a03018a81
       name: 'Mailcow: DKIM record exists'
       type: ZABBIX_ACTIVE
@@ -827,9 +879,12 @@ zabbix_export:
       triggers:
       - uuid: 02e855300eaf40f282cff5c28d4f29a1
         expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.dkim.exists)=0
-        name: 'Mailcow: DKIM record missing for one or more domains on {HOST.NAME}'
+        name: 'Mailcow: DKIM record missing for one or more domains'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: security
     - uuid: b168699f28a74fbc86701992f45f6d73
       name: 'Mailcow: DMARC record exists'
       type: ZABBIX_ACTIVE
@@ -849,9 +904,12 @@ zabbix_export:
       triggers:
       - uuid: 8a4d9f32ed4d42c28c2d4ac5fd12493c
         expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.dmarc.exists)=0
-        name: 'Mailcow: DMARC record missing for one or more domains on {HOST.NAME}'
+        name: 'Mailcow: DMARC record missing for one or more domains'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: security
     - uuid: 45a86f367af24f108b2c217393d76b8a
       name: 'Mailcow: PTR record valid'
       type: ZABBIX_ACTIVE
@@ -870,9 +928,12 @@ zabbix_export:
       triggers:
       - uuid: be366ad7a14443788eeb312c20016e20
         expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.ptr.valid)=0
-        name: 'Mailcow: PTR record invalid on {HOST.NAME}'
+        name: 'Mailcow: PTR record invalid'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: security
     - uuid: 60150889bf5942618e08b1d512620f11
       name: 'Mailcow: DNS record details'
       type: ZABBIX_ACTIVE
@@ -942,12 +1003,16 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 4b5bea9e48564a3a83946b664b879c08
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.root.used)>90
-        name: 'Mailcow: Root disk >90% on {HOST.NAME}'
-        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.root.used)<85
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.root.used)>{$MAILCOW.DISK.WARN}
+        name: 'Mailcow: Root disk usage is too high'
+        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.root.used)<{$MAILCOW.DISK.RECOVER}
         priority: HIGH
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
+        event_name: 'Mailcow: Root disk usage is too high (over {$MAILCOW.DISK.WARN}%)'
+        tags:
+        - tag: scope
+          value: capacity
     - uuid: 38640df1d4df466487aa8ea38f63ceac
       name: 'Mailcow: Docker disk total (KB)'
       type: ZABBIX_ACTIVE
@@ -989,12 +1054,16 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 3a460af09c7d47de89d99269584e6450
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.docker.used)>90
-        name: 'Mailcow: Docker disk >90% on {HOST.NAME}'
-        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.docker.used)<85
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.docker.used)>{$MAILCOW.DISK.WARN}
+        name: 'Mailcow: Docker disk usage is too high'
+        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.docker.used)<{$MAILCOW.DISK.RECOVER}
         priority: HIGH
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
+        event_name: 'Mailcow: Docker disk usage is too high (over {$MAILCOW.DISK.WARN}%)'
+        tags:
+        - tag: scope
+          value: capacity
     - uuid: ffd793c1ecda489986f81c5c289536b5
       name: 'Mailcow: Log disk total (KB)'
       type: ZABBIX_ACTIVE
@@ -1036,12 +1105,16 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 5d20c9017f5b43358c71158acf5ae1f7
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.log.used)>90
-        name: 'Mailcow: Log disk >90% on {HOST.NAME}'
-        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.log.used)<85
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.log.used)>{$MAILCOW.DISK.WARN}
+        name: 'Mailcow: Log disk usage is too high'
+        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.log.used)<{$MAILCOW.DISK.RECOVER}
         priority: WARNING
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
+        event_name: 'Mailcow: Log disk usage is too high (over {$MAILCOW.DISK.WARN}%)'
+        tags:
+        - tag: scope
+          value: capacity
     - uuid: 149f8ce099ad4a6d8ca21dfe7426c2b6
       name: 'Mailcow: Docker top containers'
       type: ZABBIX_ACTIVE
@@ -1111,12 +1184,16 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 3b628bf186d54caf88fc693148eee6c2
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.vmail.used)>85
-        name: 'Mailcow: vmail disk >85% on {HOST.NAME}'
-        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.vmail.used)<80
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.vmail.used)>{$MAILCOW.DISK.VMAIL.WARN}
+        name: 'Mailcow: Mail storage usage is too high'
+        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.vmail.used)<{$MAILCOW.DISK.VMAIL.RECOVER}
         priority: HIGH
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
+        event_name: 'Mailcow: Mail storage usage is too high (over {$MAILCOW.DISK.VMAIL.WARN}%)'
+        tags:
+        - tag: scope
+          value: capacity
     - uuid: c5ca7de474c6405584508d8344116831
       name: 'Mailcow: vmail maildir size (MB)'
       type: ZABBIX_ACTIVE
@@ -1213,9 +1290,12 @@ zabbix_export:
       triggers:
       - uuid: ba561045e51144f980528a568a671266
         expression: last(/mailcow_complete_monitoring_v45/mailcow.updates.available)=1
-        name: 'Mailcow: Update available on {HOST.NAME}'
+        name: 'Mailcow: Update available'
         priority: INFO
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: ddb18d99e2d145638b5aea15a2583ce8
       name: 'Mailcow: Commits behind'
       type: ZABBIX_ACTIVE
@@ -1232,9 +1312,13 @@ zabbix_export:
       triggers:
       - uuid: c18ad202158247c18835b9822a904bb0
         expression: last(/mailcow_complete_monitoring_v45/mailcow.updates.commits.behind)>20
-        name: 'Mailcow: {ITEM.VALUE} commits behind on {HOST.NAME}'
+        name: 'Mailcow: Mailcow update available'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} commits behind'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: 89a27b4b37cc43518119da577ba265c9
       name: 'Mailcow: Update script exists'
       type: ZABBIX_ACTIVE
@@ -1307,9 +1391,12 @@ zabbix_export:
       triggers:
       - uuid: 795f4b2ed82f4c918124192a781d6ef7
         expression: last(/mailcow_complete_monitoring_v45/mailcow.rspamd.running)=0
-        name: 'Mailcow: Rspamd not running on {HOST.NAME}'
+        name: 'Mailcow: Rspamd not running'
         priority: DISASTER
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: b6ab99f0a671463a8e6f4a1e4c8f0dc4
       name: 'Mailcow: Rspamd scanned'
       type: ZABBIX_ACTIVE
@@ -1458,9 +1545,12 @@ zabbix_export:
       triggers:
       - uuid: 133060ef38eb411286c11b36e560c062
         expression: last(/mailcow_complete_monitoring_v45/mailcow.dovecot.running)=0
-        name: 'Mailcow: Dovecot not running on {HOST.NAME}'
+        name: 'Mailcow: Dovecot not running'
         priority: DISASTER
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: 5a4b13ba722d492284cffecbd65b9e2d
       name: 'Mailcow: Dovecot version'
       type: ZABBIX_ACTIVE
@@ -1542,9 +1632,12 @@ zabbix_export:
       triggers:
       - uuid: f048f61386ae4b8e8420665890bb60ba
         expression: sum(/mailcow_complete_monitoring_v45/mailcow.dovecot.imap.errors,1h)>10
-        name: 'Mailcow: Dovecot IMAP errors on {HOST.NAME}'
+        name: 'Mailcow: Dovecot IMAP errors'
         priority: WARNING
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: a5a6b427bb084dee892529be4a3fed53
       name: 'Mailcow: Quota warnings'
       type: ZABBIX_ACTIVE
@@ -1587,11 +1680,14 @@ zabbix_export:
       triggers:
       - uuid: 8eef9ebbfcd741388c8fa7c7c0dd1808
         expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.age)>48
-        name: 'Mailcow: Backup older than 48h on {HOST.NAME}'
+        name: 'Mailcow: Backup older than 48h'
         recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.age)<24
         priority: HIGH
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
+        tags:
+        - tag: scope
+          value: notice
     - uuid: c80bc00051b546708048009e0cbc6065
       name: 'Mailcow: Backup size (MB)'
       type: ZABBIX_ACTIVE
@@ -1634,9 +1730,12 @@ zabbix_export:
       triggers:
       - uuid: 3347ca2e44ad45ec8197fc1fc9fcedf9
         expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.disk.free)<10
-        name: 'Mailcow: Backup disk low (<10% free) on {HOST.NAME}'
+        name: 'Mailcow: Backup disk low (<10% free)'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: capacity
     - uuid: aa6863d1070042de85c7f8b5546524d1
       name: 'Mailcow: Backup dir exists'
       type: ZABBIX_ACTIVE
@@ -1655,9 +1754,12 @@ zabbix_export:
       triggers:
       - uuid: a5621bc4a1d743c08ba22fca34e17c7f
         expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.dir.exists)=0
-        name: 'Mailcow: Backup directory missing on {HOST.NAME}'
+        name: 'Mailcow: Backup directory missing'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: cab0e1846eb641c98f830dcfd5005e67
       name: 'Mailcow: Last backup timestamp'
       type: ZABBIX_ACTIVE
@@ -1691,9 +1793,12 @@ zabbix_export:
       triggers:
       - uuid: 501d57d5d2594bdb8bb3e868e2e8e4e2
         expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.zero.files)>0
-        name: 'Mailcow: Backup contains empty files on {HOST.NAME}'
+        name: 'Mailcow: Backup contains empty files'
         priority: WARNING
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: 4b4f13a676d849adaba567a326529da2
       name: 'Mailcow: Backup script exists'
       type: ZABBIX_ACTIVE
@@ -1750,9 +1855,12 @@ zabbix_export:
       triggers:
       - uuid: bcc980302d96486687c0a86438bfa928
         expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.failed)>0
-        name: 'Mailcow: Sync jobs failed on {HOST.NAME}'
+        name: 'Mailcow: Sync jobs failed'
         priority: WARNING
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: edd6d5055ed64f3a826c524c0195dafd
       name: 'Mailcow: Sync jobs never run'
       type: ZABBIX_ACTIVE
@@ -1769,9 +1877,12 @@ zabbix_export:
       triggers:
       - uuid: fae389f1dafc4a1985165a00e85cdf3b
         expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.never_run)>0
-        name: 'Mailcow: Sync jobs never executed on {HOST.NAME}'
+        name: 'Mailcow: Sync jobs never executed'
         priority: INFO
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: 077879f6048f4b1d8c62c3b36645a339
       name: 'Mailcow: Sync oldest run (hours)'
       type: ZABBIX_ACTIVE
@@ -1788,9 +1899,12 @@ zabbix_export:
       triggers:
       - uuid: 6a4e18f1d3bc49a883aebbc90d42956e
         expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.oldest_run)>48
-        name: 'Mailcow: Sync job not run for >48h on {HOST.NAME}'
+        name: 'Mailcow: Sync job not run for >48h'
         priority: WARNING
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: f52386b062604013831b3f859601ac57
       name: 'Mailcow: Sync jobs stuck'
       type: ZABBIX_ACTIVE
@@ -1807,9 +1921,12 @@ zabbix_export:
       triggers:
       - uuid: 8cd85d61cb404bbc8abdc385a8525470
         expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.stuck)>0
-        name: 'Mailcow: Sync job stuck on {HOST.NAME}'
+        name: 'Mailcow: Sync job stuck'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: e01e45d060fe4506840110c0e971d7b4
       name: 'Mailcow: Mailboxes total'
       type: ZABBIX_ACTIVE
@@ -1865,9 +1982,13 @@ zabbix_export:
       triggers:
       - uuid: 2e75007d25724b8181cc67a50dd55026
         expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.over.quota)>0
-        name: 'Mailcow: {ITEM.VALUE} mailbox(es) over 80% quota on {HOST.NAME}'
+        name: 'Mailcow: Mailboxes over 80% quota'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} mailbox(es)'
+        tags:
+        - tag: scope
+          value: capacity
     - uuid: 8b6b30ee039040438e922bf73d68ba95
       name: 'Mailcow: Mailboxes without quota limit'
       type: ZABBIX_ACTIVE
@@ -1965,22 +2086,24 @@ zabbix_export:
       triggers:
       - uuid: e29030541ca640c1b86c1a95c118800a
         expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.received)>5*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w)>5
-        name: 'Mailcow: Mail volume spike - {ITEM.VALUE} received (5x baseline) on {HOST.NAME}'
+        name: 'Mailcow: Mail volume spike'
         priority: WARNING
         description: Eingehende Mails sind mehr als 5x höher als der Wochendurchschnitt. Mögliche Spam-Welle oder ungewöhnlicher Maileingang.
         manual_close: 'YES'
         tags:
         - tag: scope
-          value: anomaly
+          value: performance
+        opdata: '{ITEM.LASTVALUE1} received/h (>5x weekly baseline)'
       - uuid: fb6e0ea6f994432b9c6bc21f3073f552
         expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.received)<0.2*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w)>10
-        name: 'Mailcow: Mail volume drop - {ITEM.VALUE} received (<20% baseline) on {HOST.NAME}'
+        name: 'Mailcow: Mail volume drop'
         priority: HIGH
         description: 'Eingehende Mails sind unter 20% des Wochendurchschnitts. Mögliche Ursachen: DNS/MX-Problem, Netzwerk, Firewall.'
         manual_close: 'YES'
         tags:
         - tag: scope
-          value: anomaly
+          value: availability
+        opdata: '{ITEM.LASTVALUE1} received/h (<20% of weekly baseline)'
     - uuid: 2571dd43e70a45fc8c0cef71da8e520e
       name: 'Mailcow: Mails delivered (1h)'
       type: ZABBIX_ACTIVE
@@ -2023,20 +2146,25 @@ zabbix_export:
       triggers:
       - uuid: b79fabf4c4e74fc08fbb509c587bd353
         expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.deferred)>10
-        name: 'Mailcow: {ITEM.VALUE} deferred mails on {HOST.NAME}'
+        name: 'Mailcow: Deferred mails'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} deferred/h'
+        tags:
+        - tag: scope
+          value: performance
       - uuid: 3470837c65eb42f1914e1774673be673
         expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.deferred)>5*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.deferred,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.deferred,1w:now-1w)>3
-        name: 'Mailcow: Deferred spike - {ITEM.VALUE} deferred (5x baseline) on {HOST.NAME}'
+        name: 'Mailcow: Deferred mail spike'
         priority: WARNING
         description: Deferred Mails sind mehr als 5x höher als der Wochendurchschnitt. Mögliches Zustellproblem bei Empfänger-Servern.
         manual_close: 'YES'
         tags:
         - tag: scope
-          value: anomaly
+          value: performance
+        opdata: '{ITEM.LASTVALUE1} deferred/h (>5x weekly baseline)'
         dependencies:
-        - name: 'Mailcow: {ITEM.VALUE} deferred mails on {HOST.NAME}'
+        - name: 'Mailcow: Deferred mails'
           expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.deferred)>10
     - uuid: 621052d67dd041248f79d641065fd307
       name: 'Mailcow: Mails bounced (1h)'
@@ -2054,20 +2182,25 @@ zabbix_export:
       triggers:
       - uuid: d6fe0a0d45924b318e0b1fe670a12760
         expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.bounced)>50
-        name: 'Mailcow: {ITEM.VALUE} bounced mails on {HOST.NAME}'
+        name: 'Mailcow: Bounced mails'
         priority: HIGH
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} bounced/h'
+        tags:
+        - tag: scope
+          value: performance
       - uuid: 257dfed4443a46cab7840f2746404076
         expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.bounced)>5*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.bounced,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.bounced,1w:now-1w)>3
-        name: 'Mailcow: Bounce spike - {ITEM.VALUE} bounced (5x baseline) on {HOST.NAME}'
+        name: 'Mailcow: Bounce spike'
         priority: WARNING
         description: Bounces sind mehr als 5x höher als der Wochendurchschnitt. Möglicher Backscatter oder Adresslisten-Problem.
         manual_close: 'YES'
         tags:
         - tag: scope
-          value: anomaly
+          value: performance
+        opdata: '{ITEM.LASTVALUE1} bounced/h (>5x weekly baseline)'
         dependencies:
-        - name: 'Mailcow: {ITEM.VALUE} bounced mails on {HOST.NAME}'
+        - name: 'Mailcow: Bounced mails'
           expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.bounced)>50
     - uuid: 4e00175095ee48998e5dceb57401eaad
       name: 'Mailcow: Mails rejected (1h)'
@@ -2085,13 +2218,14 @@ zabbix_export:
       triggers:
       - uuid: b24dfacfa41642a3b359dd8dd5c21e75
         expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.rejected)>10*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.rejected,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.rejected,1w:now-1w)>3
-        name: 'Mailcow: Reject spike - {ITEM.VALUE} rejected (10x baseline) on {HOST.NAME}'
+        name: 'Mailcow: Reject spike'
         priority: WARNING
         description: Abgelehnte Mails sind mehr als 10x höher als der Wochendurchschnitt. Möglicher Brute-Force oder Spam-Angriff.
         manual_close: 'YES'
         tags:
         - tag: scope
-          value: anomaly
+          value: performance
+        opdata: '{ITEM.LASTVALUE1} rejected/h (>10x weekly baseline)'
     - uuid: 8ec855b007db4fe6862b371a6c17ade4
       name: 'Mailcow: Reject rate %'
       type: ZABBIX_ACTIVE
@@ -2108,9 +2242,13 @@ zabbix_export:
       triggers:
       - uuid: 91bb01008bd14de0800ad88947ac0d7f
         expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.reject.rate)>80
-        name: 'Mailcow: Reject rate {ITEM.VALUE}% on {HOST.NAME}'
+        name: 'Mailcow: Mail reject rate too high'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1}% of incoming mail rejected'
+        tags:
+        - tag: scope
+          value: performance
     - uuid: 83a6e41fe5474cc4860b9683476a10d8
       name: 'Mailcow: Bytes received (1h)'
       type: ZABBIX_ACTIVE
@@ -2348,9 +2486,13 @@ zabbix_export:
       triggers:
       - uuid: c43ffc5c2a01427b86c6f6de4a5822a7
         expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.warnings.sasl)>100
-        name: 'Mailcow: {ITEM.VALUE} SASL warnings on {HOST.NAME}'
+        name: 'Mailcow: High number of SASL warnings'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} warnings/h'
+        tags:
+        - tag: scope
+          value: security
     - uuid: c1e13bd122a544908d7837a7d431af30
       name: 'Mailcow: TLS warnings (1h)'
       type: ZABBIX_ACTIVE
@@ -2408,9 +2550,14 @@ zabbix_export:
       triggers:
       - uuid: 7e422b40d89c402f871b9c1db8e57143
         expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.running)=0
-        name: 'Mailcow: ClamAV not running on {HOST.NAME}'
+        name: 'Mailcow: ClamAV not running'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: availability
+        - tag: scope
+          value: security
     - uuid: 8acea33065474e468e1d5a9f47704e69
       name: 'Mailcow: ClamAV version'
       type: ZABBIX_ACTIVE
@@ -2466,17 +2613,25 @@ zabbix_export:
       triggers:
       - uuid: 7f52a5003d73482884356f9322c42cda
         expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.daily.age)>7
-        name: 'Mailcow: ClamAV definitions {ITEM.VALUE} days old on {HOST.NAME}'
+        name: 'Mailcow: ClamAV definitions outdated'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} days old'
+        tags:
+        - tag: scope
+          value: security
         dependencies:
-        - name: 'Mailcow: ClamAV definitions critically outdated ({ITEM.VALUE} days) on {HOST.NAME}'
+        - name: 'Mailcow: ClamAV definitions critically outdated'
           expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.daily.age)>30
       - uuid: fc71eccc62a948de8a39df84608755c1
         expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.daily.age)>30
-        name: 'Mailcow: ClamAV definitions critically outdated ({ITEM.VALUE} days) on {HOST.NAME}'
+        name: 'Mailcow: ClamAV definitions critically outdated'
         priority: HIGH
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} days old'
+        tags:
+        - tag: scope
+          value: security
     - uuid: c3aa8c6664e943348503458368334b2e
       name: 'Mailcow: ClamAV daily DB build date'
       type: ZABBIX_ACTIVE
@@ -2532,17 +2687,25 @@ zabbix_export:
       triggers:
       - uuid: a138f73968ee4e9a88575d2fa285c634
         expression: last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)<100 and last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)>=0
-        name: 'Mailcow: Watchdog health {ITEM.VALUE}% on {HOST.NAME}'
+        name: 'Mailcow: Watchdog health degraded'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1}% healthy'
+        tags:
+        - tag: scope
+          value: availability
         dependencies:
-        - name: 'Mailcow: Watchdog health CRITICAL {ITEM.VALUE}% on {HOST.NAME}'
+        - name: 'Mailcow: Watchdog health critical'
           expression: last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)<50 and last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)>=0
       - uuid: f1d47cc59615426f891aa8335d8a802d
         expression: last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)<50 and last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)>=0
-        name: 'Mailcow: Watchdog health CRITICAL {ITEM.VALUE}% on {HOST.NAME}'
+        name: 'Mailcow: Watchdog health critical'
         priority: HIGH
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1}% healthy'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: 39848c730b61400f8e0fdc0ac1f4e043
       name: 'Mailcow: Unhealthy services count'
       type: ZABBIX_ACTIVE
@@ -2848,10 +3011,14 @@ zabbix_export:
       triggers:
       - uuid: b1602febcca4424799fb52115562a52d
         expression: last(/mailcow_complete_monitoring_v45/mailcow.rspamd.bayes.total.learned)<200 and last(/mailcow_complete_monitoring_v45/mailcow.rspamd.uptime)>86400
-        name: 'Mailcow: Bayes filter poorly trained ({ITEM.VALUE} messages) on {HOST.NAME}'
+        name: 'Mailcow: Bayes filter poorly trained'
         priority: INFO
         description: Der Bayes-Filter hat weniger als 200 Nachrichten gelernt. Rspamd empfiehlt mindestens 200 Ham + 200 Spam für zuverlässige Erkennung.
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} messages learned'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: a2ec62aa931a494c8e64c206c116d41f
       name: 'Mailcow: Rspamd Bayes ham ratio %'
       type: ZABBIX_ACTIVE
@@ -2961,18 +3128,28 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 9347ce7c87b54e018d0d1b234094d579
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<14
-        name: 'Mailcow: ACME cert expires in {ITEM.VALUE} days on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<{$MAILCOW.CERT.WARN}
+        name: 'Mailcow: ACME certificate expires soon'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} days left'
+        event_name: 'Mailcow: ACME certificate expires soon (less than {$MAILCOW.CERT.WARN} days left)'
+        tags:
+        - tag: scope
+          value: security
         dependencies:
-        - name: 'Mailcow: ACME cert expires in {ITEM.VALUE} days - CRITICAL on {HOST.NAME}'
-          expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<7
+        - name: 'Mailcow: ACME certificate expiry critical'
+          expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<{$MAILCOW.CERT.CRIT}
       - uuid: 4611e7f01a0c4d1585dbae10f0f1e644
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<7
-        name: 'Mailcow: ACME cert expires in {ITEM.VALUE} days - CRITICAL on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<{$MAILCOW.CERT.CRIT}
+        name: 'Mailcow: ACME certificate expiry critical'
         priority: HIGH
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} days left'
+        event_name: 'Mailcow: ACME certificate expiry critical (less than {$MAILCOW.CERT.CRIT} days left)'
+        tags:
+        - tag: scope
+          value: security
     - uuid: ecfb98b16fd649558a46042a291a5174
       name: 'Mailcow: ACME cert serial'
       type: ZABBIX_ACTIVE
@@ -3070,9 +3247,12 @@ zabbix_export:
       triggers:
       - uuid: 18382ad376e54d0086b3f91ccbc4dc50
         expression: last(/mailcow_complete_monitoring_v45/zabbix.agent.running)=0
-        name: 'Mailcow: Zabbix agent not running on {HOST.NAME}'
+        name: 'Mailcow: Zabbix agent not running'
         priority: DISASTER
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: 92d8d259bff348568ccb1f916b77dda4
       name: 'Mailcow: Agent uptime (seconds)'
       type: ZABBIX_ACTIVE
@@ -3128,9 +3308,12 @@ zabbix_export:
       triggers:
       - uuid: 0a74ad30b8cf4395847f4b79b61eb76d
         expression: last(/mailcow_complete_monitoring_v45/zabbix.agent.log.errors)>5
-        name: 'Mailcow: Zabbix agent errors on {HOST.NAME}'
+        name: 'Mailcow: Zabbix agent errors'
         priority: WARNING
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
     - uuid: 8cd6478f9f1641a28dcd90b6b5ee7eca
       name: 'Mailcow: Agent log warnings (last 100)'
       type: ZABBIX_ACTIVE
@@ -3193,6 +3376,9 @@ zabbix_export:
         priority: HIGH
         manual_close: 'YES'
         description: Der mailcow-monitor.timer ist nicht aktiv. Keine Daten werden gesammelt.
+        tags:
+        - tag: scope
+          value: availability
     - uuid: f750e24b394c4a798b74237803155de9
       name: 'Mailcow: Collector data age (seconds)'
       type: ZABBIX_ACTIVE
@@ -3215,6 +3401,9 @@ zabbix_export:
         priority: WARNING
         manual_close: 'YES'
         description: Die Monitoring-Daten sind älter als 5 Minuten.
+        tags:
+        - tag: scope
+          value: availability
     - uuid: 6fa4d4c818604da58107fac02d6c3356
       name: 'Mailcow: Collector last run'
       type: ZABBIX_ACTIVE
@@ -3258,6 +3447,38 @@ zabbix_export:
         value: mailcow
       trends: 90d
       description: Anzahl der gesammelten Metriken
+    - uuid: a00bd97f09cb40a4a032b98ced32c1b4
+      name: 'Mailcow: Database reachable'
+      type: ZABBIX_ACTIVE
+      key: mailcow.db.reachable
+      delay: '60'
+      history: 30d
+      value_type: UNSIGNED
+      description: '1 = die Mailcow-Datenbank hat auf SELECT 1 geantwortet.
+
+        Ohne dieses Signal ist ein DB-Ausfall unsichtbar: alle DB-Metriken
+
+        stehen dann auf 0, ohne dass ein Fehler gemeldet wird.'
+      tags:
+      - tag: component
+        value: collector
+      - tag: application
+        value: mailcow
+      trends: 90d
+      triggers:
+      - uuid: 7e27273f1dbf431083034b2f2940746e
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.db.reachable)=0
+        name: 'Mailcow: Database not reachable'
+        opdata: all database metrics are 0 while this is set
+        priority: HIGH
+        description: 'Der Collector bekommt keine Antwort aus der Mailcow-Datenbank.
+
+          Mailbox-, Domain-, Alias-, Quarantaene- und LLD-Metriken sind
+
+          dann bedeutungslos (0), auch wenn kein anderer Alarm ausloest.'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: f911786588e64ea9a0b81f9b9f73da9b
       name: 'Mailcow: Collector errors count'
       type: ZABBIX_ACTIVE
@@ -3278,6 +3499,9 @@ zabbix_export:
         name: 'Mailcow: Collector module errors detected'
         priority: WARNING
         description: Mindestens ein Collector-Modul hat einen Fehler gemeldet
+        tags:
+        - tag: scope
+          value: notice
     - uuid: 04bad314a07d4df7929ce1e620c08c41
       name: 'Mailcow: Collector error details'
       type: ZABBIX_ACTIVE
@@ -3346,9 +3570,13 @@ zabbix_export:
       triggers:
       - uuid: de38ce34065a4ca08e494012d26d0f53
         expression: change(/mailcow_complete_monitoring_v45/mailcow.docker.restarts.total)>5
-        name: 'Mailcow: Docker restart count high ({ITEM.VALUE}) on {HOST.NAME}'
+        name: 'Mailcow: Docker restart count high'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} restarts'
+        tags:
+        - tag: scope
+          value: availability
     - uuid: 0f44f2ea3a2949268e18502b403c906b
       name: 'Mailcow: Docker memory total (MB)'
       type: ZABBIX_ACTIVE
@@ -3474,9 +3702,12 @@ zabbix_export:
       triggers:
       - uuid: 35f7a9809f59402581ec09a1f0a238ee
         expression: min(/mailcow_complete_monitoring_v45/mailcow.sogo.memcached.evictions,1h)>0 and change(/mailcow_complete_monitoring_v45/mailcow.sogo.memcached.evictions)>50
-        name: 'Mailcow: SOGo Memcached cache pressure on {HOST.NAME} (>50 evictions/5m)'
+        name: 'Mailcow: SOGo Memcached cache pressure (>50 evictions/5m)'
         priority: WARNING
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: performance
     - uuid: 6fc714ab45e7487a869a0591d36fe75a
       name: 'Mailcow: SOGo Memcached uptime (s)'
       type: ZABBIX_ACTIVE
@@ -3507,9 +3738,13 @@ zabbix_export:
       triggers:
       - uuid: 7a1db2c7d98e460d8448e0e5e31baa7d
         expression: last(/mailcow_complete_monitoring_v45/mailcow.quarantine.total)>100
-        name: 'Mailcow: Quarantine has {ITEM.VALUE} mails on {HOST.NAME}'
+        name: 'Mailcow: Many mails in quarantine'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} mails'
+        tags:
+        - tag: scope
+          value: capacity
     - uuid: 5023045ba4ee42c7818aaa92c0584610
       name: 'Mailcow: Quarantine spam mails'
       type: ZABBIX_ACTIVE
@@ -3539,9 +3774,13 @@ zabbix_export:
       triggers:
       - uuid: a957c5327afa422985909ef977ab3f66
         expression: last(/mailcow_complete_monitoring_v45/mailcow.quarantine.virus)>0
-        name: 'Mailcow: Virus mails in quarantine ({ITEM.VALUE}) on {HOST.NAME}'
+        name: 'Mailcow: Virus mails in quarantine'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} virus mails'
+        tags:
+        - tag: scope
+          value: security
     - uuid: 444aded032ab409b81792d55602ac9b9
       name: 'Mailcow: Quarantine oldest mail (hours)'
       type: ZABBIX_ACTIVE
@@ -3599,9 +3838,13 @@ zabbix_export:
       triggers:
       - uuid: 68f62e2c64af45e381fa8a111b8487ec
         expression: last(/mailcow_complete_monitoring_v45/mailcow.queue.deferred)>10
-        name: 'Mailcow: {ITEM.VALUE} deferred mails in queue on {HOST.NAME}'
+        name: 'Mailcow: Deferred mails in queue'
         priority: WARNING
         manual_close: 'YES'
+        opdata: '{ITEM.LASTVALUE1} mails in deferred queue'
+        tags:
+        - tag: scope
+          value: performance
     - uuid: 36bfb93270b24405855fd1661c123d0f
       name: 'Mailcow: Queue active mails'
       type: ZABBIX_ACTIVE
@@ -3645,9 +3888,13 @@ zabbix_export:
       triggers:
       - uuid: d7fc204d558d49a38776dcd12bdff538
         expression: last(/mailcow_complete_monitoring_v45/mailcow.queue.age.oldest.hours)>24
-        name: 'Mailcow: Deferred mail stuck for {ITEM.VALUE}h on {HOST.NAME}'
+        name: 'Mailcow: Deferred mail stuck in queue'
         priority: HIGH
         manual_close: 'YES'
+        opdata: oldest mail {ITEM.LASTVALUE1}h old
+        tags:
+        - tag: scope
+          value: performance
     - uuid: ea449d11974c4a3382bd85d86a5a65e7
       name: 'Mailcow: LLD Domain Discovery JSON'
       type: ZABBIX_ACTIVE
@@ -5519,15 +5766,45 @@ zabbix_export:
       - value: '1'
         newvalue: 'Yes'
     macros:
-    - macro: '{$MAILCOW.QUEUE.WARN}'
-      value: '50'
+    - macro: '{$MAILCOW.CERT.CRIT}'
+      value: '7'
+      description: 'Certificate expiry: critical threshold in days (must be < CERT.WARN)'
     - macro: '{$MAILCOW.CERT.WARN}'
       value: '14'
+      description: 'Certificate expiry: warning threshold in days'
+    - macro: '{$MAILCOW.CONTAINER.MEM.MAX}'
+      value: '25'
+      description: Container memory usage that triggers a problem, in percent of host memory
+    - macro: '{$MAILCOW.DISK.RECOVER}'
+      value: '85'
+      description: Disk trigger resolves below this percentage (must be < DISK.WARN)
+    - macro: '{$MAILCOW.DISK.VMAIL.RECOVER}'
+      value: '80'
+      description: vmail trigger resolves below this percentage (must be < DISK.VMAIL.WARN)
+    - macro: '{$MAILCOW.DISK.VMAIL.WARN}'
+      value: '85'
+      description: Mail storage warns earlier than other filesystems
     - macro: '{$MAILCOW.DISK.WARN}'
       value: '90'
+      description: Disk usage percentage that triggers a problem
+    - macro: '{$MAILCOW.QUEUE.RECOVER}'
+      value: '30'
+      description: Mail queue trigger resolves below this value (must be < QUEUE.WARN)
+    - macro: '{$MAILCOW.QUEUE.WARN}'
+      value: '50'
+      description: Mail queue length that triggers a problem
+    - macro: '{$MAILCOW.QUOTA.CRIT}'
+      value: '95'
+      description: 'Domain/mailbox quota: critical threshold in percent'
+    - macro: '{$MAILCOW.QUOTA.WARN}'
+      value: '80'
+      description: 'Domain/mailbox quota: warning threshold in percent'
     - macro: '{$MAILCOW.RBL.CRITICAL}'
       value: '1'
       description: Trigger if listed on this many RBLs or more
+    - macro: '{$MAILCOW.SYNCJOB.AGE.MAX}'
+      value: '48'
+      description: Sync job is considered stale after this many hours
     discovery_rules:
     - uuid: 893ef4ad82b94f9f89615785ee659e1b
       name: 'Mailcow: Domain Discovery'
@@ -5638,15 +5915,25 @@ zabbix_export:
           value: mailcow
       trigger_prototypes:
       - uuid: a6f4495167f8420f851eef04bd4d3a20
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.domain.usage_pct[{#DOMAIN}])>80
-        name: 'Mailcow: Domain [{#DOMAIN}] quota usage >80% on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.domain.usage_pct[{{#DOMAIN}}])>{$MAILCOW.QUOTA.WARN}
+        name: 'Mailcow: Domain [{#DOMAIN}] quota usage is high'
         priority: WARNING
         manual_close: 'YES'
+        event_name: 'Mailcow: Domain [{#DOMAIN}] quota usage is high (over {$MAILCOW.QUOTA.WARN}%)'
+        opdata: '{ITEM.LASTVALUE1}% used'
+        tags:
+        - tag: scope
+          value: capacity
       - uuid: 6d3459da903f41238c8f2327cf401889
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.domain.usage_pct[{#DOMAIN}])>95
-        name: 'Mailcow: Domain [{#DOMAIN}] quota usage >95% on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.domain.usage_pct[{{#DOMAIN}}])>{$MAILCOW.QUOTA.CRIT}
+        name: 'Mailcow: Domain [{#DOMAIN}] quota usage is critical'
         priority: HIGH
         manual_close: 'YES'
+        event_name: 'Mailcow: Domain [{#DOMAIN}] quota usage is critical (over {$MAILCOW.QUOTA.CRIT}%)'
+        opdata: '{ITEM.LASTVALUE1}% used'
+        tags:
+        - tag: scope
+          value: capacity
       graph_prototypes:
       - uuid: 6ac8215d20e34b558d0db119d62edea6
         name: 'Mailcow: Domain [{#DOMAIN}] quota usage'
@@ -5749,15 +6036,25 @@ zabbix_export:
           value: mailcow
       trigger_prototypes:
       - uuid: f568b4d1eb5545868429355514af2062
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.lld.usage_pct[{#MAILBOX}])>80
-        name: 'Mailcow: Mailbox [{#MAILBOX}] quota >80% on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.lld.usage_pct[{{#MAILBOX}}])>{$MAILCOW.QUOTA.WARN}
+        name: 'Mailcow: Mailbox [{#MAILBOX}] quota usage is high'
         priority: WARNING
         manual_close: 'YES'
+        event_name: 'Mailcow: Mailbox [{#MAILBOX}] quota usage is high (over {$MAILCOW.QUOTA.WARN}%)'
+        opdata: '{ITEM.LASTVALUE1}% used'
+        tags:
+        - tag: scope
+          value: capacity
       - uuid: 29e82efac2c845558dbd514c5b649fdd
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.lld.usage_pct[{#MAILBOX}])>95
-        name: 'Mailcow: Mailbox [{#MAILBOX}] quota >95% on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.lld.usage_pct[{{#MAILBOX}}])>{$MAILCOW.QUOTA.CRIT}
+        name: 'Mailcow: Mailbox [{#MAILBOX}] quota usage is critical'
         priority: HIGH
         manual_close: 'YES'
+        event_name: 'Mailcow: Mailbox [{#MAILBOX}] quota usage is critical (over {$MAILCOW.QUOTA.CRIT}%)'
+        opdata: '{ITEM.LASTVALUE1}% used'
+        tags:
+        - tag: scope
+          value: capacity
       graph_prototypes:
       - uuid: f4b11a2c4960409b8af42041731f496c
         name: 'Mailcow: Mailbox [{#MAILBOX}] quota usage'
@@ -5880,14 +6177,22 @@ zabbix_export:
       trigger_prototypes:
       - uuid: 084f8113fa964f7b825933a632d5e3fb
         expression: last(/mailcow_complete_monitoring_v45/mailcow.syncjob.success[{#SYNCJOB_ID}])=0
-        name: 'Mailcow: Syncjob [{#SYNCJOB_USER}] failed on {HOST.NAME}'
+        name: 'Mailcow: Syncjob [{#SYNCJOB_USER}] failed'
         priority: HIGH
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
       - uuid: 85ee8a56fcc64ba089c6d7fccdf08726
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.syncjob.age_hours[{#SYNCJOB_ID}])>48
-        name: 'Mailcow: Syncjob [{#SYNCJOB_USER}] not run for >48h on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.syncjob.age_hours[{{#SYNCJOB_ID}}])>{$MAILCOW.SYNCJOB.AGE.MAX}
+        name: 'Mailcow: Syncjob [{#SYNCJOB_USER}] has not run recently'
         priority: WARNING
         manual_close: 'YES'
+        event_name: 'Mailcow: Syncjob [{#SYNCJOB_USER}] has not run for {$MAILCOW.SYNCJOB.AGE.MAX}h'
+        opdata: last run {ITEM.LASTVALUE1}h ago
+        tags:
+        - tag: scope
+          value: notice
     - uuid: 9e26a5fed228440d82c8ff8bc08532e4
       name: 'Mailcow: Docker Container Discovery'
       type: DEPENDENT
@@ -6037,14 +6342,22 @@ zabbix_export:
       trigger_prototypes:
       - uuid: 178b4dfa701047a98993b316ce35eb1e
         expression: change(/mailcow_complete_monitoring_v45/mailcow.docker.restarts[{#CONTAINER}])>0
-        name: 'Mailcow: Container [{#CONTAINER}] restarted on {HOST.NAME}'
+        name: 'Mailcow: Container [{#CONTAINER}] has been restarted'
         priority: INFO
         manual_close: 'YES'
+        tags:
+        - tag: scope
+          value: notice
       - uuid: 415b930006d541f88ecf17f2bb176a5b
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.docker.mem_pct[{#CONTAINER}])>25
-        name: 'Mailcow: Container [{#CONTAINER}] memory >25% on {HOST.NAME}'
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.docker.mem_pct[{{#CONTAINER}}])>{$MAILCOW.CONTAINER.MEM.MAX}
+        name: 'Mailcow: Container [{#CONTAINER}] memory usage is high'
         priority: WARNING
         manual_close: 'YES'
+        event_name: 'Mailcow: Container [{#CONTAINER}] memory usage is high (over {$MAILCOW.CONTAINER.MEM.MAX}%)'
+        opdata: '{ITEM.LASTVALUE1}% of host memory'
+        tags:
+        - tag: scope
+          value: capacity
       graph_prototypes:
       - uuid: 338a7f406f624d4f8457bc24419c2d4f
         name: 'Mailcow: Container [{#CONTAINER}] resources'
@@ -6064,3 +6377,8 @@ zabbix_export:
           item:
             host: mailcow_complete_monitoring_v45
             key: mailcow.docker.mem_mb[{#CONTAINER}]
+    tags:
+    - tag: class
+      value: software
+    - tag: target
+      value: mailcow

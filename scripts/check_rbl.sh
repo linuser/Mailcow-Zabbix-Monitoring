@@ -5,7 +5,7 @@
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft ob die Server-IP auf gängigen Blacklists gelistet ist
-#  License:    AGPL-3.0-or-later (see LICENSE)
+#  License:    MIT (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 #
@@ -24,8 +24,12 @@
 #  oder einen Spamhaus-DQS-Key verwenden.
 # ====================================================================
 
-CACHE_FILE="/var/tmp/rbl_check.cache"
-CACHE_DETAIL_FILE="/var/tmp/rbl_check_detail.cache"
+# Verzeichnis anlegen: im Normalbetrieb macht das systemd (RuntimeDirectory),
+# bei einem manuellen Aufruf existiert es aber nicht.
+mkdir -p /run/mailcow-monitor 2>/dev/null || true
+
+CACHE_FILE="/run/mailcow-monitor/rbl.cache"
+CACHE_DETAIL_FILE="/run/mailcow-monitor/rbl_detail.cache"
 CACHE_MAX_AGE=1800  # 30 Minuten
 
 # Optional: eigener rekursiver Resolver fuer DNSBL-Abfragen, z.B. 127.0.0.1

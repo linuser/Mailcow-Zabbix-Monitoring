@@ -153,4 +153,4 @@ Siehe `CHANGELOG.md`.
 
 ## Lizenz
 
-AGPL-3.0-or-later, passend zu Zabbix seit 7.0 (vorher GPLv2). Siehe `LICENSE`.
+MIT. Siehe `LICENSE`.

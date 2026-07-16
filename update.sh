@@ -3,7 +3,7 @@
 #  Mailcow Zabbix Monitoring - Update auf v1.2
 #  Vendor:   Alexander Fox | PlaNet Fox
 #  Project:  https://github.com/linuser/Mailcow-Zabbix-Monitoring
-#  License:  AGPL-3.0-or-later (siehe LICENSE)
+#  License:  MIT (siehe LICENSE)
 # ====================================================================
 #
 #  Aktualisiert die Host-Seite (Collector + Check-Scripts + Agent-Config).
@@ -19,7 +19,7 @@ set -u
 
 BIN_DIR="/usr/local/bin"
 AGENT_CONF="/etc/zabbix/zabbix_agent2.conf"
-JSON="/var/tmp/mailcow-monitor.json"
+JSON="/run/mailcow-monitor/monitor.json"
 BACKUP_ROOT="/var/backups/mailcow-zabbix"
 SRC="$(cd "$(dirname "$0")" && pwd)"
 
@@ -141,13 +141,59 @@ done
 [ $UPD -eq 0 ] && ok "All scripts already up to date"
 echo
 
+# --------------------------------------- 4b. systemd-Units + Altlasten
+# update.sh hat bis v1.2 NUR die Scripts unter /usr/local/bin ersetzt. Die
+# systemd-Unit blieb unangetastet - wer updatete, bekam den neuen Collector,
+# aber die alte, ungehaertete Unit ohne RuntimeDirectory. Dank des Fallbacks im
+# Collector lief das sogar, nur eben ohne die Haertung. Ein Update, das Erfolg
+# meldet und die Haelfte liefert.
+for UNIT in mailcow-monitor.service mailcow-monitor.timer; do
+    [ -f "$SRC/$UNIT" ] || continue
+    TARGET="/etc/systemd/system/$UNIT"
+    if [ -f "$TARGET" ] && cmp -s "$SRC/$UNIT" "$TARGET"; then
+        echo "        unchanged: $UNIT"
+        continue
+    fi
+    if [ $CHECK_ONLY -eq 1 ]; then
+        warn "(check) would replace: $UNIT"
+    else
+        install -o root -g root -m 0644 "$SRC/$UNIT" "$TARGET" && ok "updated: $UNIT"
+        UNITS_CHANGED=1
+    fi
+done
+
+# Zustand lag bis v1.2.1 im weltschreibbaren /var/tmp; jetzt /run/mailcow-monitor
+LEGACY=0
+for OLD_STATE in mailcow-monitor.json mailcow-monitor.json.tmp \
+                 mailcow-monitor-slow.json mailcow-monitor-mailflow.json \
+                 rbl_check.cache rbl_check_detail.cache ptr_check.cache \
+                 postfix_log_analysis.cache rspamd_stats.cache \
+                 dovecot_check.cache; do
+    [ -e "/var/tmp/$OLD_STATE" ] || continue
+    LEGACY=$((LEGACY+1))
+    [ $CHECK_ONLY -eq 0 ] && rm -f "/var/tmp/$OLD_STATE"
+done
+if [ $LEGACY -gt 0 ]; then
+    if [ $CHECK_ONLY -eq 1 ]; then
+        warn "(check) would remove $LEGACY legacy state file(s) from /var/tmp"
+    else
+        ok "$LEGACY legacy state file(s) removed from /var/tmp"
+    fi
+fi
+echo
+
 # ------------------------------------------------- 5. Caches + Dienst
 echo "[5/6] Caches and service"
 if [ $CHECK_ONLY -eq 0 ]; then
     # RBL-Cache muss weg, sonst liefert der alte Fehlalarm noch bis zu 30 Min.
-    rm -f /var/tmp/rbl_check.cache /var/tmp/rbl_check_detail.cache
+    rm -f /run/mailcow-monitor/rbl.cache /run/mailcow-monitor/rbl_detail.cache
     ok "RBL cache cleared"
     systemctl daemon-reload 2>/dev/null
+    # Ohne Neustart des Timers laeuft der Dienst weiter mit der alten Unit -
+    # die Haertung und das RuntimeDirectory griffen erst beim naechsten Reboot.
+    if [ "${UNITS_CHANGED:-0}" = "1" ]; then
+        ok "systemd units reloaded"
+    fi
     START_TS=$(date +%s)
     if systemctl list-unit-files 2>/dev/null | grep -q mailcow-monitor.timer; then
         systemctl restart mailcow-monitor.timer && ok "Timer restarted"

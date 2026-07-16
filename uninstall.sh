@@ -5,7 +5,7 @@
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Entfernt Collector, Reader, Configs und systemd Units
-#  License:    AGPL-3.0-or-later (see LICENSE)
+#  License:    MIT (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 set -e
@@ -63,12 +63,18 @@ echo -e "${GREEN}✓ Sudoers removed${NC}"
 
 # 5. Cache/JSON
 echo -e "${YELLOW}[5/6] Removing cache...${NC}"
-rm -f /var/tmp/mailcow-monitor.json
-rm -f /var/tmp/mailcow-monitor.json.tmp
-rm -f /var/tmp/mailcow-monitor-slow.json
-rm -f /var/tmp/mailcow-monitor-mailflow.json
-rm -f /var/tmp/postfix_log_analysis.cache /var/tmp/dovecot_check.cache
-rm -f /var/tmp/rbl_check.cache /var/tmp/rspamd_stats.cache /var/tmp/rbl_check_detail.cache
+rm -f /run/mailcow-monitor/monitor.json
+rm -f /run/mailcow-monitor/monitor.json.tmp
+rm -f /run/mailcow-monitor/monitor-slow.json
+rm -f /run/mailcow-monitor/monitor-mailflow.json
+rm -rf /run/mailcow-monitor
+# Altlasten bis v1.2.1: der Zustand lag in /var/tmp
+rm -f /var/tmp/mailcow-monitor.json /var/tmp/mailcow-monitor.json.tmp \
+      /var/tmp/mailcow-monitor-slow.json /var/tmp/mailcow-monitor-mailflow.json \
+      /var/tmp/rbl_check.cache /var/tmp/rbl_check_detail.cache \
+      /var/tmp/ptr_check.cache /var/tmp/postfix_log_analysis.cache \
+      /var/tmp/rspamd_stats.cache /var/tmp/dovecot_check.cache
+rm -f /run/mailcow-monitor/rbl.cache /run/mailcow-monitor/rspamd_stats.cache /run/mailcow-monitor/rbl_detail.cache
 echo -e "${GREEN}✓ Cache removed${NC}"
 
 # 6. Zabbix Agent neustarten
