@@ -217,7 +217,7 @@ else
 fi
 
 # JSON-File für zabbix lesbar
-chmod 644 /run/mailcow-monitor/monitor.json 2>/dev/null
+chmod 640 /run/mailcow-monitor/monitor.json 2>/dev/null
 
 # ====================================================================
 echo ""
