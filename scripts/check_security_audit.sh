@@ -19,13 +19,18 @@ get_hostname() {
 }
 
 get_domains() {
-    DBPASS=$(grep -oP "DBPASS=\K[a-zA-Z0-9._-]+" "$MAILCOW_DIR/mailcow.conf" 2>/dev/null)
+    # Passwort ungekuerzt lesen (cut -f2- behaelt auch '=' und Sonderzeichen).
+    DBPASS=$(grep -m1 "^DBPASS=" "$MAILCOW_DIR/mailcow.conf" 2>/dev/null | cut -d= -f2-)
     MYSQL_CONTAINER=$(docker ps --filter "name=mysql" --format "{{.Names}}" 2>/dev/null | grep -i mailcow | head -1)
     [ -z "$MYSQL_CONTAINER" ] && \
         MYSQL_CONTAINER=$(docker ps --filter "name=maria" --format "{{.Names}}" 2>/dev/null | grep -i mailcow | head -1)
-    [ -z "$MYSQL_CONTAINER" ] || [ -z "$DBPASS" ] && return 1
+    { [ -z "$MYSQL_CONTAINER" ] || [ -z "$DBPASS" ]; } && return 1
 
-    MYSQL_PWD="$DBPASS" docker exec -e "MYSQL_PWD=$DBPASS" "$MYSQL_CONTAINER" \
+    # Passwort nur als Env-Wert (MYSQL_PWD), niemals im argv: 'docker exec -e
+    # MYSQL_PWD' reicht die exportierte Variable durch, ohne sie in die
+    # Host-Prozessliste zu schreiben.
+    export MYSQL_PWD="$DBPASS"
+    docker exec -e MYSQL_PWD "$MYSQL_CONTAINER" \
         mysql -u mailcow mailcow -Nse \
         "SELECT domain FROM domain WHERE active=1 AND domain NOT LIKE '%_sogo%'" 2>/dev/null
 }

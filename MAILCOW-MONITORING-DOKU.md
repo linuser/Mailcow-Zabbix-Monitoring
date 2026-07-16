@@ -30,11 +30,15 @@
 ### Sicherheitsmodell
 - Zabbix hat **keinen** Docker-Zugriff
 - **Kein** UnsafeUserParameters nötig
-- Collector schreibt world-readable JSON, Reader liest nur
-- MySQL-Passwort via `MYSQL_PWD` Environment-Variable (nicht auf Kommandozeile sichtbar)
+- Collector schreibt `monitor.json` mit `0640`, Gruppe `zabbix` (nur root + zabbix-Dienst lesbar), Reader liest nur
+- MySQL-Passwort via `MYSQL_PWD`: Collector über `0600`-Env-Datei, `check_*`-/`sync_jobs`-Skripte über `docker exec -e MYSQL_PWD` — nie auf der Kommandozeile
+- systemd-Unit gehärtet (`NoNewPrivileges`, `ProtectSystem=full`, `PrivateDevices`, `RestrictAddressFamilies` u. a.); Restrisiko bleibt der Docker-Socket-Zugriff als root
+- Setzt die Gruppe `zabbix` voraus (Standard bei zabbix-agent2)
 
 ### Performance-Optimierungen
-- **Zentralisierte Container-Erkennung:** 1× `find_all_containers()` statt ~10 einzelne `find_container()` pro Lauf
+- **collect_version() mit 1h-Cache:** `git fetch` + `update.sh --check-tags` laufen nicht mehr jede 60s, sondern höchstens stündlich
+- **Module parallel:** ThreadPoolExecutor (4 Worker) für die 22 Module statt sequenziell
+- **1× `docker ps` in `find_all_containers()`** statt 8 einzelne Aufrufe pro Lauf
 - **ClamAV:** 1 docker exec mit Shell-Compound statt 3-5 einzelne
 - **Docker Health:** gezielter `docker stats` + 1 gebatchter `docker inspect` statt N einzelne
 - **Slow-Cache parallelisiert:** ThreadPoolExecutor (6 Threads) für TLS/DNS/RBL-Checks

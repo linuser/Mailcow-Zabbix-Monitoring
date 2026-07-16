@@ -37,6 +37,8 @@ SLOW_CACHE = "/run/mailcow-monitor/monitor-slow.json"
 SLOW_MAX_AGE = 3600  # Sekunden
 MAILFLOW_CACHE = "/run/mailcow-monitor/monitor-mailflow.json"
 MAILFLOW_MAX_AGE = 300  # 5 Minuten
+VERSION_CACHE = "/run/mailcow-monitor/monitor-version.json"
+VERSION_MAX_AGE = 3600  # 1 Stunde - git fetch/update.sh muss nicht jede 60s laufen
 
 # ====================================================================
 # HILFSFUNKTIONEN
@@ -54,8 +56,8 @@ def ensure_runtime_dir():
     ohne dieses Fallback wuerde der Lauf am Schreiben scheitern.
     """
     try:
-        os.makedirs(RUNTIME_DIR, mode=0o755, exist_ok=True)
-        os.chmod(RUNTIME_DIR, 0o755)
+        os.makedirs(RUNTIME_DIR, mode=0o750, exist_ok=True)
+        os.chmod(RUNTIME_DIR, 0o750)
     except OSError as e:
         print(f"FEHLER: {RUNTIME_DIR} nicht anlegbar: {e}", file=sys.stderr)
         sys.exit(1)
@@ -186,11 +188,25 @@ def find_container(name_filter):
 
 
 def find_all_containers():
-    """Alle Mailcow-Container einmal suchen (#2: zentral statt pro Modul)."""
+    """Alle Mailcow-Container mit EINEM docker ps finden.
+
+    Vorher lief find_container() 8x - also 8 separate 'docker ps'-Aufrufe pro
+    Collector-Lauf. Ein einziger Aufruf plus Matching in Python liefert dasselbe
+    Ergebnis (Fragment im Namen, 'mailcow' im Namen) deutlich guenstiger.
+    """
+    out = run_cmd(["docker", "ps", "--format", "{{.Names}}"], timeout=10)
+    all_names = [l.strip() for l in out.splitlines() if "mailcow" in l.lower()]
+
+    def match(fragment):
+        for n in all_names:
+            if fragment in n.lower():
+                return n
+        return ""
+
     containers = {}
     for name in ["postfix", "dovecot", "rspamd", "netfilter", "clamd", "watchdog", "memcached"]:
-        containers[name] = find_container(name)
-    containers["mysql"] = find_container("mysql") or find_container("maria")
+        containers[name] = match(name)
+    containers["mysql"] = match("mysql") or match("maria")
     return containers
 
 
@@ -243,9 +259,23 @@ postconf mail_version 2>/dev/null; exit 0
     if pid_lines and pid_lines[0].strip() == "1":
         data["postfix.process.running"] = 1
 
-    # Queue
+    # Queue: bevorzugt die autoritative Trailer-Zeile "-- N Kbytes in M Requests."
+    # Fallback auf Queue-ID-Zeilen. Der alte Heuristik-Zaehler (erstes Zeichen
+    # Grossbuchstabe/alnum) zaehlte "Mail queue is empty" als 1 Mail und verfehlte
+    # ausserdem lange Queue-IDs, die mit einer Ziffer beginnen.
     mq_lines = sections.get("MAILQ", [])
-    data["postfix.pfmailq"] = len([l for l in mq_lines if l and l[0].isalnum() and l[0].isupper()])
+    pfmailq = None
+    for l in mq_lines:
+        m = re.search(r'\bin\s+(\d+)\s+Request', l)
+        if m:
+            pfmailq = int(m.group(1))
+    if pfmailq is None:
+        if any("Mail queue is empty" in l for l in mq_lines):
+            pfmailq = 0
+        else:
+            # Queue-ID am Zeilenanfang (kurz: hex; lang: alnum), evtl. mit */!.
+            pfmailq = sum(1 for l in mq_lines if re.match(r'^[0-9A-Za-z]{5,}[*!]?\s', l))
+    data["postfix.pfmailq"] = pfmailq
 
     # Connections
     conn_lines = sections.get("CONN", [])
@@ -586,9 +616,12 @@ def collect_disk(dovecot_container):
         if len(lines) >= 2:
             parts = lines[-1].split()
             if len(parts) >= 5:
-                data[f"mailcow.disk.{prefix}.total"] = int(parts[1])
-                data[f"mailcow.disk.{prefix}.free"] = int(parts[3])
-                data[f"mailcow.disk.{prefix}.used"] = int(parts[4].replace("%", ""))
+                try:
+                    data[f"mailcow.disk.{prefix}.total"] = int(parts[1])
+                    data[f"mailcow.disk.{prefix}.free"] = int(parts[3])
+                    data[f"mailcow.disk.{prefix}.used"] = int(parts[4].replace("%", ""))
+                except ValueError:
+                    pass  # unerwartete df-Zeile: Defaults (0) behalten, nicht das Modul abbrechen
 
     # Docker top containers
     top = run("docker ps --format 'table {{.Names}}\t{{.Size}}' 2>/dev/null")
@@ -627,9 +660,12 @@ def collect_disk(dovecot_container):
                 if len(df_lines) >= 2:
                     parts = df_lines[-1].split()
                     if len(parts) >= 5:
-                        data["mailcow.disk.vmail.total"] = int(parts[1])
-                        data["mailcow.disk.vmail.free"] = int(parts[3])
-                        data["mailcow.disk.vmail.used"] = int(parts[4].replace("%", ""))
+                        try:
+                            data["mailcow.disk.vmail.total"] = int(parts[1])
+                            data["mailcow.disk.vmail.free"] = int(parts[3])
+                            data["mailcow.disk.vmail.used"] = int(parts[4].replace("%", ""))
+                        except ValueError:
+                            pass
 
                 du_lines = sections.get("DU", [])
                 if du_lines:
@@ -1421,6 +1457,17 @@ def collect_version():
         "mailcow.update.script.exists": 0,
     }
 
+    # 1h-Cache: 'git fetch --tags origin' und Mailcows './update.sh --check-tags'
+    # sind Netzwerk-Operationen. Ohne Cache liefen sie bei jedem Collector-Lauf,
+    # also alle 60s - unnoetige Last und Kandidat fuer git-Lock-/Rate-Limit-
+    # Probleme. Versionsinfos aendern sich hoechstens im Stunden-/Tagestakt.
+    try:
+        if now() - int(os.path.getmtime(VERSION_CACHE)) <= VERSION_MAX_AGE:
+            with open(VERSION_CACHE) as f:
+                return json.load(f)
+    except (FileNotFoundError, ValueError, json.JSONDecodeError):
+        pass
+
     git = f"cd {MAILCOW_DIR} &&"
 
     # Git-Infos gebatcht in einem Aufruf
@@ -1473,6 +1520,14 @@ def collect_version():
                 data["mailcow.updates.available"] = 1
         except (subprocess.TimeoutExpired, Exception):
             pass
+
+    # Cache schreiben (atomar), damit der naechste Lauf ohne Netzwerk auskommt.
+    try:
+        with open(VERSION_CACHE + ".tmp", "w") as f:
+            json.dump(data, f, indent=2)
+        os.rename(VERSION_CACHE + ".tmp", VERSION_CACHE)
+    except OSError:
+        pass
 
     return data
 
@@ -1963,6 +2018,12 @@ def _count_total(text, keyword):
 # ====================================================================
 
 def main():
+    # umask 0027: alles, was dieser Lauf (und die von ihm gestarteten Skripte,
+    # z.B. check_ptr.sh) neu anlegt, ist hoechstens rw-r----- / rwxr-x---.
+    # monitor.json und die Caches enthalten Mailbox-/Domain-Listen und
+    # Top-Sender/-Empfaenger - also E-Mail-Adressen. Mit 0644 konnte sie bisher
+    # JEDER lokale Account lesen, nicht nur der zabbix-Dienst.
+    os.umask(0o027)
     ensure_runtime_dir()
     start_time = time.time()
     errors = []  # #10: Fehler-Tracking pro Modul
@@ -2007,15 +2068,34 @@ def main():
         ("slow",         lambda: collect_slow()),                    # #6: parallelisiert
     ]
 
+    # db_reachable() zuerst - der Aufruf legt (falls DB erreichbar) die db.env
+    # einmalig an, bevor die Module parallel laufen. Damit gibt es keinen
+    # Wettlauf um die Lazy-Init von _ENV_FILE in mysql_exec.
     metrics["mailcow.db.reachable"] = db_reachable(ct["mysql"], config["dbpass"])
 
-    for name, func in modules:
+    def _run_module(item):
+        name, func = item
         t0 = time.time()
         try:
-            metrics.update(func())
+            result = func()
+            err = None
         except Exception as e:
-            errors.append(f"{name}:{type(e).__name__}")
-        module_times[name] = round(time.time() - t0, 2)
+            result = None
+            err = f"{name}:{type(e).__name__}"
+        return name, result, err, round(time.time() - t0, 2)
+
+    # Module sind fast alle I/O-gebunden (warten auf docker exec / mysql / DNS).
+    # Parallel statt sequenziell verkuerzt die Gesamtlaufzeit deutlich. Begrenzt
+    # auf 4 Worker, damit die gleichzeitige Docker-/MySQL-Last auf dem Mailserver
+    # nicht hochschnellt. Ergebnisse werden im Hauptthread eingesammelt, deshalb
+    # ist der Zugriff auf metrics/errors/module_times ohne Lock sicher.
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for name, result, err, dt in pool.map(_run_module, modules):
+            if result is not None:
+                metrics.update(result)
+            if err:
+                errors.append(err)
+            module_times[name] = dt
 
     # Config-Werte
     metrics["mailcow.config.hostname"] = config["hostname"]
@@ -2036,7 +2116,10 @@ def main():
         with open(OUTPUT_TMP, "w") as f:
             json.dump(metrics, f, indent=2, ensure_ascii=False)
         os.rename(OUTPUT_TMP, OUTPUT)
-        os.chmod(OUTPUT, 0o644)
+        # 0640 statt 0644: nur root und die zabbix-Gruppe (siehe Group=zabbix
+        # in mailcow-monitor.service) duerfen die JSON mit den Mailbox-/
+        # Domain-Daten lesen - nicht jeder lokale Nutzer.
+        os.chmod(OUTPUT, 0o640)
     except OSError as e:
         print(f"FEHLER: JSON schreiben fehlgeschlagen: {e}", file=sys.stderr)
         sys.exit(1)

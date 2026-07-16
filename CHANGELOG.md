@@ -2,6 +2,82 @@
 
 > Entries from v1.2 onwards are written in English. Earlier entries are in German.
 
+## v1.2.2 (2026-07-16)
+
+### Security
+- **The check scripts still passed the DB password on the command line.** The
+  collector already used a `0600` env file (v1.2.1), but `check_dns.sh`,
+  `check_security_audit.sh` and `sync_jobs_check.sh` still ran
+  `docker exec ... mysql -p"$DBPASS"` (and one `-e "MYSQL_PWD=$DBPASS"`), exposing
+  the secret in the host process list and in the `docker exec` argv. All three now
+  `export MYSQL_PWD` and pass it via `docker exec -e MYSQL_PWD` — the value lives
+  only in the environment, never in argv.
+- **`monitor.json` was world-readable (`0644`) and leaked PII.** The JSON holds
+  mailbox lists, domain lists, top senders/recipients and the LLD mailbox/domain
+  data — i.e. email addresses. Any local account could read it. The collector now
+  runs with `umask 0027`, writes the JSON `0640` and the runtime dir `0750`, and
+  the systemd unit sets `Group=zabbix`, `RuntimeDirectoryMode=0750` and
+  `UMask=0027`, so only root and the zabbix service can read it. The DB password
+  was never in the JSON. **This requires the `zabbix` group to exist** — standard
+  when zabbix-agent2 is installed; adjust `Group=` if yours differs.
+- **Command injection via the port argument in `check_tls.sh`.** `$2` was
+  interpolated unvalidated into `bash -c "</dev/tcp/$DOMAIN/$PORT"`. The shipped
+  UserParameters only pass fixed ports, but the script is executable in
+  `/usr/local/bin`; the port is now validated as numeric before use.
+- **DB-password parsing truncated secrets with special characters.** The
+  charset-limited `grep -oP "DBPASS=\K[a-zA-Z0-9._-]+"` and `cut -d= -f2` cut the
+  password at the first `!`, `@`, `+`, `=` … — silently breaking DB auth and
+  falling back to hostname-only mode. Now `grep -m1 "^DBPASS=" | cut -d= -f2-`
+  reads it verbatim.
+- **systemd unit hardened further, and the hardening comment corrected.** Added
+  `PrivateDevices=yes` and `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+  AF_NETLINK`; `SystemCallFilter=@system-service` ships commented-out with a
+  test note (the collector spawns many subprocesses). The comment now states
+  honestly that Docker-socket access as root is the dominant residual risk and the
+  namespace directives are defense-in-depth, not a barrier against a collector
+  compromise.
+
+### Performance
+- **`collect_version()` now has its own 1 h cache.** It ran `git fetch --tags
+  origin` and Mailcow's `./update.sh --check-tags` — two network operations — on
+  every 60 s cycle. Version info changes on the scale of hours/days; the cache
+  removes that per-minute git/network load and the git-lock / rate-limit exposure.
+- **One `docker ps` instead of eight.** `find_all_containers()` now fetches every
+  container name in a single `docker ps` and matches in Python, instead of calling
+  `find_container()` (a separate `docker ps`) eight times per run.
+- **Modules run in parallel.** The 22 collector modules are almost entirely
+  I/O-bound (waiting on `docker exec` / MySQL / DNS). They now run in a bounded
+  `ThreadPoolExecutor` (4 workers) instead of sequentially, cutting wall-clock
+  time. Capped at 4 to keep concurrent Docker/MySQL load on the mail server in
+  check; `db.env` is created once (via the preceding `db_reachable()` call) before
+  the pool, so there is no race on the lazy env-file init.
+
+### Fixed
+- **`postfix_log_analysis.sh` produced invalid JSON whenever a counter was zero.**
+  `grep -c "..." || echo 0` prints `0` *and* exits 1 on zero matches, so the
+  `|| echo 0` appended a second `0` → `0\n0` → malformed JSON. On a healthy server
+  several of these counters are legitimately zero, so this was the *common* case:
+  `jq` then failed to parse the cache and **every** key from this script read 0.
+  Replaced with a validated `safe_count` helper that always emits a single number.
+- **Empty Postfix queue reported `pfmailq = 1`.** The old heuristic counted the
+  first uppercase-alphanumeric character per line, so `Mail queue is empty` (the
+  `M`) counted as one message — and it also missed long queue IDs that start with
+  a digit. Now the authoritative `-- N Requests` trailer is used, with an
+  empty-queue guard and a queue-ID fallback that handles short and long IDs.
+- **`test-complete.sh` gave false PASS/FAIL and skipped a key.** The pass/fail gate
+  fuzzy-matched `error|not supported|cannot` in the returned *value*, so string
+  metrics whose content contains "error" (e.g. `mailcow.watchdog.detail`) failed
+  falsely, while the reader's real sentinels (`ZBX_NOTSUPPORTED: …`) could slip
+  through. It now matches the exact sentinel prefix and additionally tests
+  `mailcow.db.reachable` (247 keys instead of 246).
+
+### Changed — robustness
+- Timeouts added to the `dig` calls in `check_ptr.sh` and to the `docker exec` log
+  fetch in both Postfix scripts, so an unresponsive resolver or a hung container
+  can't stall the 60 s root collector.
+- The `int()` conversions in `collect_disk` are guarded, so an unexpected `df`
+  line degrades to defaults instead of aborting the whole disk module.
+
 ## v1.2.1 (2026-07-16)
 
 ### Fixed — user macros were defined but never used

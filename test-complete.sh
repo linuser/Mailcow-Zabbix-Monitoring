@@ -4,7 +4,7 @@
 #  Version:    1.2
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
-#  Description: Prüft alle 246 UserParameters via zabbix_get
+#  Description: Prüft alle 247 UserParameters via zabbix_get
 #  License:    MIT (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
@@ -14,14 +14,20 @@ PASS=0; FAIL=0; WARN=0
 
 echo "============================================="
 echo " Mailcow Monitoring v1.2 - Complete test"
-echo " 246 UserParameters / 220 Template Items"
+echo " 247 UserParameters / 247 Template Items"
 echo "============================================="
 echo ""
 
 test_key() {
     local label="$1" key="$2" expect_type="${3:-any}"
     RESULT=$(zabbix_get -s 127.0.0.1 -k "$key" 2>&1)
-    if [ $? -ne 0 ] || [ -z "$RESULT" ] || echo "$RESULT" | grep -qi "error\|not supported\|cannot"; then
+    local rc=$?
+    # Fehler = zabbix_get-Fehler, leeres Ergebnis oder ein echtes Reader-Sentinel.
+    # Der Reader meldet Fehler ausschliesslich mit Prefix "ZBX_NOTSUPPORTED"
+    # (No data file / Data stale / Key not found / Read error). Der frühere
+    # fuzzy-Match auf "error|not supported|cannot" prüfte den WERT und meldete
+    # legitime String-Metriken wie watchdog.detail=...:error fälschlich als FAIL.
+    if [ $rc -ne 0 ] || [ -z "$RESULT" ] || [ "${RESULT#ZBX_NOTSUPPORTED}" != "$RESULT" ]; then
         printf "  ${RED}✗${NC} %-45s %s\n" "$label" "${RED}ERROR: $RESULT${NC}"
         FAIL=$((FAIL + 1)); return 1
     fi
@@ -58,6 +64,7 @@ echo ""
 # [2] Collector (4)
 echo -e "${BLUE}=== [2] Collector (4 Keys) ===${NC}\n"
 for k in running age last_run duration keys errors error.detail module.times; do test_key "Collector $k" "mailcow.collector.$k"; done
+test_key "DB reachable" "mailcow.db.reachable" bool
 echo ""
 
 # [3] Postfix (16)
@@ -248,7 +255,7 @@ printf "  ${GREEN}✓ Passed:${NC}  %d\n" "$PASS"
 printf "  ${YELLOW}? Warning:${NC}    %d\n" "$WARN"
 printf "  ${RED}✗ Failed:${NC} %d\n" "$FAIL"
 printf "  ─────────────────\n"
-printf "  Total:         %d / 246\n" "$TOTAL"
+printf "  Total:         %d / 247\n" "$TOTAL"
 echo ""
 if [ $FAIL -eq 0 ]; then
     echo -e "${GREEN}============================================="

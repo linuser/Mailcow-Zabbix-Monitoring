@@ -15,20 +15,26 @@ CHECK_TYPE="${1:-detail}"
 
 # --- Get all active mail domains from MySQL ---
 get_domains() {
-    DBPASS=$(grep -oP "DBPASS=\K[a-zA-Z0-9._-]+" "$MAILCOW_DIR/mailcow.conf" 2>/dev/null)
+    # Passwort ungekuerzt lesen: der fruehere grep-Zeichensatz [a-zA-Z0-9._-]
+    # schnitt jedes Passwort mit Sonderzeichen (!@+= ...) still ab. cut -f2-
+    # behaelt auch ein '=' im Passwort.
+    DBPASS=$(grep -m1 "^DBPASS=" "$MAILCOW_DIR/mailcow.conf" 2>/dev/null | cut -d= -f2-)
     MYSQL_CONTAINER=$(docker ps --filter "name=mysql" --format "{{.Names}}" 2>/dev/null | grep -i mailcow | head -1)
-    
+
     if [ -z "$MYSQL_CONTAINER" ] || [ -z "$DBPASS" ]; then
         # Fallback: try MariaDB container name
         MYSQL_CONTAINER=$(docker ps --filter "name=maria" --format "{{.Names}}" 2>/dev/null | grep -i mailcow | head -1)
     fi
-    
-    if [ -z "$MYSQL_CONTAINER" ]; then
+
+    if [ -z "$MYSQL_CONTAINER" ] || [ -z "$DBPASS" ]; then
         echo ""
         return 1
     fi
-    
-    docker exec "$MYSQL_CONTAINER" mysql -u mailcow -p"$DBPASS" mailcow -Nse \
+
+    # Passwort via MYSQL_PWD-Env statt -p auf der Kommandozeile: sonst steht es
+    # in der Prozessliste (ps) und im docker-exec-argv auf dem Host.
+    export MYSQL_PWD="$DBPASS"
+    docker exec -e MYSQL_PWD "$MYSQL_CONTAINER" mysql -u mailcow mailcow -Nse \
         "SELECT domain FROM domain WHERE active=1 AND domain NOT LIKE '%_sogo%'" 2>/dev/null
 }
 

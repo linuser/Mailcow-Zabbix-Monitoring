@@ -6,7 +6,7 @@ Vollständiges Monitoring für Mailcow-Dockerized mit Zabbix Agent 2.
 
 ```
 systemd timer (60s) → mailcow-collector.py (root)
-  → /run/mailcow-monitor/monitor.json (chmod 644)
+  → /run/mailcow-monitor/monitor.json (chmod 640, Gruppe zabbix)
     → Zabbix Agent 2 (zabbix user) → mailcow-reader.sh → liest JSON
 ```
 
@@ -64,12 +64,21 @@ systemctl restart zabbix-agent2
 - Der Collector läuft als root über einen systemd-Timer; der Zabbix-Agent liest
   nur eine JSON-Datei und braucht keinerlei Rechte — keine Sudo-Regeln,
   `UnsafeUserParameters=0`.
-- Der Zustand liegt in `/run/mailcow-monitor` (`root:root`, `0755`), angelegt von
+- Der Zustand liegt in `/run/mailcow-monitor` (`root:zabbix`, `0750`), angelegt von
   systemd. Bis v1.2 lag er im weltschreibbaren `/var/tmp`.
-- Das Mailcow-DB-Passwort wird `docker exec` über eine `0600`-Env-Datei übergeben,
-  nie auf der Kommandozeile — `/proc/<pid>/cmdline` ist weltlesbar.
+- `monitor.json` wird `0640` geschrieben (Collector `umask 0027`; Unit
+  `Group=zabbix`, `RuntimeDirectoryMode=0750`) — die enthaltenen Mailbox-/Domain-/
+  Adressdaten sind nur für root und den zabbix-Dienst lesbar, nicht für jeden
+  lokalen Account. **Setzt voraus, dass die Gruppe `zabbix` existiert** (Standard
+  bei installiertem zabbix-agent2; sonst `Group=` in der Unit anpassen).
+- Das Mailcow-DB-Passwort geht an `docker exec` über eine `0600`-Env-Datei
+  (Collector) bzw. die `MYSQL_PWD`-Umgebung (`check_*`-/`sync_jobs`-Skripte), nie
+  auf der Kommandozeile — `/proc/<pid>/cmdline` ist weltlesbar.
 - Die systemd-Unit ist gehärtet (`NoNewPrivileges`, `ProtectSystem=full`,
-  `PrivateTmp`, `ProtectHome` u. a.).
+  `PrivateTmp`, `ProtectHome`, `PrivateDevices`, `RestrictAddressFamilies` u. a.).
+  Hinweis: Der Collector erreicht als root den Docker-Socket — das ist das
+  dominante Restrisiko; die Namespace-Härtung ist Verteidigung in der Tiefe, kein
+  Riegel gegen eine Codeausführung im Collector selbst.
 - Werte aus der Datenbank landen nie in einer Shell: kein `shell=True` für
   irgendetwas Parametrisiertes.
 

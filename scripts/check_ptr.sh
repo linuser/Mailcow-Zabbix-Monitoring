@@ -33,10 +33,10 @@ if [ -z "$MAILCOW_HOSTNAME" ]; then
 fi
 
 # --- Öffentliche IP ermitteln (Fallback-Kette, Bug #7) ---
-MAIL_IP=$(dig +short myip.opendns.com @resolver1.opendns.com 2>/dev/null | grep -oP "^[0-9.]+" | head -1)
+MAIL_IP=$(timeout 5 dig +short +time=3 +tries=1 myip.opendns.com @resolver1.opendns.com 2>/dev/null | grep -oP "^[0-9.]+" | head -1)
 [ -z "$MAIL_IP" ] && MAIL_IP=$(curl -4 -s --max-time 5 ifconfig.me 2>/dev/null)
 [ -z "$MAIL_IP" ] && MAIL_IP=$(curl -4 -s --max-time 5 icanhazip.com 2>/dev/null)
-[ -z "$MAIL_IP" ] && MAIL_IP=$(dig +short txt o-o.myaddr.l.google.com @ns1.google.com 2>/dev/null | tr -d '"' | head -1)
+[ -z "$MAIL_IP" ] && MAIL_IP=$(timeout 5 dig +short +time=3 +tries=1 txt o-o.myaddr.l.google.com @ns1.google.com 2>/dev/null | tr -d '"' | head -1)
 
 # Prüfe ob IP gültig
 if [ -z "$MAIL_IP" ] || echo "$MAIL_IP" | grep -qE '^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)'; then
@@ -46,7 +46,7 @@ fi
 
 # --- PTR Lookup ---
 # Reverse IP für dig -x
-PTR_RESULT=$(dig +short -x "$MAIL_IP" 2>/dev/null | sed 's/\.$//' | head -1)
+PTR_RESULT=$(timeout 5 dig +short +time=3 +tries=1 -x "$MAIL_IP" 2>/dev/null | sed 's/\.$//' | head -1)
 
 if [ -z "$PTR_RESULT" ]; then
     echo 0 | tee "$CACHE_FILE"

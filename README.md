@@ -8,11 +8,11 @@ Complete monitoring solution for Mailcow-Dockerized with Zabbix Agent 2. 246 met
 
 ```
 systemd timer (60s) → mailcow-collector.py (root)
-  → /run/mailcow-monitor/monitor.json (chmod 644)
+  → /run/mailcow-monitor/monitor.json (chmod 640, group zabbix)
     → Zabbix Agent 2 (zabbix user) → mailcow-reader.sh → reads JSON
 ```
 
-The collector runs as root (needs Docker/MySQL access) and writes metrics to a world-readable JSON file. The Zabbix Agent only reads that file — no Docker access, no sudo, no UnsafeUserParameters required.
+The collector runs as root (needs Docker/MySQL access) and writes metrics to a JSON file readable only by root and the `zabbix` group. The Zabbix Agent only reads that file — no Docker access, no sudo, no UnsafeUserParameters required.
 
 ## What's Monitored
 
@@ -104,12 +104,21 @@ systemctl restart zabbix-agent2
 - The collector runs as root via a systemd timer; the Zabbix agent only reads a
   JSON file and needs no privileges at all — no sudo rules,
   `UnsafeUserParameters=0`.
-- State lives in `/run/mailcow-monitor` (`root:root`, `0755`), created by systemd.
+- State lives in `/run/mailcow-monitor` (`root:zabbix`, `0750`), created by systemd.
   Up to v1.2 it lived in world-writable `/var/tmp`.
-- The Mailcow database password is passed to `docker exec` via a `0600` env file,
+- `monitor.json` is written `0640` (collector `umask 0027`; unit `Group=zabbix`,
+  `RuntimeDirectoryMode=0750`), so the mailbox / domain / address data it contains
+  is readable only by root and the `zabbix` service — not by every local account.
+  **This requires the `zabbix` group to exist** (standard with zabbix-agent2;
+  adjust `Group=` in the unit if yours differs).
+- The Mailcow database password is passed to `docker exec` via a `0600` env file
+  (collector) or the `MYSQL_PWD` environment (`check_*` / `sync_jobs` scripts),
   never on the command line — `/proc/<pid>/cmdline` is world-readable.
 - The systemd unit is hardened (`NoNewPrivileges`, `ProtectSystem=full`,
-  `PrivateTmp`, `ProtectHome`, and more).
+  `PrivateTmp`, `ProtectHome`, `PrivateDevices`, `RestrictAddressFamilies`, and
+  more). Note: the collector reaches the Docker socket as root, which is the
+  dominant residual risk — the namespace hardening is defense-in-depth, not a
+  barrier against a compromise of the collector itself.
 - Values from the database never reach a shell: nothing parameterised uses
   `shell=True`.
 

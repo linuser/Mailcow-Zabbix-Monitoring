@@ -22,35 +22,42 @@ CACHE_MAX_AGE=60  # 60 Sekunden Cache
 
 # Cache aktualisieren wenn nötig
 update_cache() {
-    LOGS=$(docker exec "$CONTAINER" tail -1000 /var/log/mail.log 2>/dev/null)
+    LOGS=$(timeout 20 docker exec "$CONTAINER" tail -1000 /var/log/mail.log 2>/dev/null)
 
     if [ -z "$LOGS" ]; then
         echo '{"sasl_auth_failed":0}' > "$CACHE_FILE"
         return
     fi
 
+    # Robuste Zaehlung. grep -c gibt bei 0 Treffern "0" aus UND liefert exit 1 -
+    # das alte "|| echo 0" haengte dann ein zweites "0" an ("0\n0") und machte das
+    # JSON kaputt, sobald ein Zaehler 0 war (auf gesunden Servern der Normalfall).
+    # Folge: jq scheiterte am kaputten Cache und ALLE Keys dieses Scripts lasen 0.
+    # safe_count validiert das Ergebnis und liefert immer genau eine Zahl.
+    safe_count() { local c; c=$(printf '%s\n' "$LOGS" | grep -cE "$1" 2>/dev/null | head -1); [[ "$c" =~ ^[0-9]+$ ]] || c=0; echo "$c"; }
+
     # Alle Counts in einem Durchgang
-    SASL_AUTH_FAILED=$(echo "$LOGS" | grep -c "SASL.*authentication failed" || echo 0)
-    RELAY_DENIED=$(echo "$LOGS" | grep -c "Relay access denied" || echo 0)
-    USER_UNKNOWN=$(echo "$LOGS" | grep -c "User unknown in" || echo 0)
-    RBL_REJECT=$(echo "$LOGS" | grep -c "blocked using" || echo 0)
-    CONNECTION_TIMEOUT=$(echo "$LOGS" | grep -c "Connection timed out" || echo 0)
-    TLS_FAILED=$(echo "$LOGS" | grep -cE "TLS.*handshake failed|SSL.*error" || echo 0)
-    QUOTA_EXCEEDED=$(echo "$LOGS" | grep -cE "mailbox.*full|quota.*exceeded|Disk quota" || echo 0)
-    SPAM_REJECTED=$(echo "$LOGS" | grep -c "milter-reject.*Spam message rejected" || echo 0)
-    VIRUS_FOUND=$(echo "$LOGS" | grep -c "Infected.*FOUND" || echo 0)
-    WARNINGS=$(echo "$LOGS" | grep -c "warning:" || echo 0)
-    ERRORS=$(echo "$LOGS" | grep -cE "error:|fatal:" || echo 0)
+    SASL_AUTH_FAILED=$(safe_count "SASL.*authentication failed")
+    RELAY_DENIED=$(safe_count "Relay access denied")
+    USER_UNKNOWN=$(safe_count "User unknown in")
+    RBL_REJECT=$(safe_count "blocked using")
+    CONNECTION_TIMEOUT=$(safe_count "Connection timed out")
+    TLS_FAILED=$(safe_count "TLS.*handshake failed|SSL.*error")
+    QUOTA_EXCEEDED=$(safe_count "mailbox.*full|quota.*exceeded|Disk quota")
+    SPAM_REJECTED=$(safe_count "milter-reject.*Spam message rejected")
+    VIRUS_FOUND=$(safe_count "Infected.*FOUND")
+    WARNINGS=$(safe_count "warning:")
+    ERRORS=$(safe_count "error:|fatal:")
 
     # Postscreen Stats (nur wenn aktiv)
-    POSTSCREEN_PASS_NEW=$(echo "$LOGS" | grep -c "postscreen.*PASS NEW" || echo 0)
-    POSTSCREEN_PASS_OLD=$(echo "$LOGS" | grep -c "postscreen.*PASS OLD" || echo 0)
-    POSTSCREEN_REJECT=$(echo "$LOGS" | grep -c "postscreen.*NOQUEUE.*reject" || echo 0)
-    POSTSCREEN_DNSBL=$(echo "$LOGS" | grep -c "postscreen.*DNSBL" || echo 0)
-    POSTSCREEN_PREGREET=$(echo "$LOGS" | grep -c "postscreen.*PREGREET" || echo 0)
-    POSTSCREEN_HANGUP=$(echo "$LOGS" | grep -c "postscreen.*HANGUP" || echo 0)
-    POSTSCREEN_WHITELISTED=$(echo "$LOGS" | grep -c "postscreen.*WHITELISTED" || echo 0)
-    POSTSCREEN_CONNECT=$(echo "$LOGS" | grep -c "postscreen.*CONNECT" || echo 0)
+    POSTSCREEN_PASS_NEW=$(safe_count "postscreen.*PASS NEW")
+    POSTSCREEN_PASS_OLD=$(safe_count "postscreen.*PASS OLD")
+    POSTSCREEN_REJECT=$(safe_count "postscreen.*NOQUEUE.*reject")
+    POSTSCREEN_DNSBL=$(safe_count "postscreen.*DNSBL")
+    POSTSCREEN_PREGREET=$(safe_count "postscreen.*PREGREET")
+    POSTSCREEN_HANGUP=$(safe_count "postscreen.*HANGUP")
+    POSTSCREEN_WHITELISTED=$(safe_count "postscreen.*WHITELISTED")
+    POSTSCREEN_CONNECT=$(safe_count "postscreen.*CONNECT")
     # Aktiv = mindestens 1 postscreen-Logeintrag
     if [ "$POSTSCREEN_CONNECT" -gt 0 ] || [ "$POSTSCREEN_PASS_NEW" -gt 0 ]; then
         POSTSCREEN_ACTIVE=1

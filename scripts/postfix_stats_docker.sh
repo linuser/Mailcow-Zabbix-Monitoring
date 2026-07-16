@@ -14,8 +14,8 @@ if [ -z "$CONTAINER" ]; then
     exit 0
 fi
 
-# Hole Logs
-LOGS=$(docker exec "$CONTAINER" tail -1000 /var/log/mail.log 2>/dev/null)
+# Hole Logs (mit Timeout, falls der Container haengt)
+LOGS=$(timeout 20 docker exec "$CONTAINER" tail -1000 /var/log/mail.log 2>/dev/null)
 
 # Safe Count Funktion (robust gegen Fehler)
 safe_count() {
