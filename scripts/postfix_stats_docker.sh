@@ -5,7 +5,7 @@
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Liest Postfix Queue-Statistiken aus dem Docker-Container
-#  License:    GPLv3 (see LICENSE)
+#  License:    AGPL-3.0-or-later (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 CONTAINER=$(docker ps --filter "name=postfix" --format "{{.Names}}" 2>/dev/null | grep -i mailcow | head -1)
@@ -20,7 +20,8 @@ LOGS=$(docker exec "$CONTAINER" tail -1000 /var/log/mail.log 2>/dev/null)
 # Safe Count Funktion (robust gegen Fehler)
 safe_count() {
     local pattern="$1"
-    local count=$(echo "$LOGS" | grep -c "$pattern" 2>/dev/null)
+    local count
+    count=$(echo "$LOGS" | grep -c "$pattern" 2>/dev/null)
     count=$(echo "$count" | head -1)
     if ! [[ "$count" =~ ^[0-9]+$ ]]; then
         count=0

@@ -5,7 +5,7 @@
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft ob der PTR-Record der öffentlichen IP auf den MAILCOW_HOSTNAME zeigt
-#  License:    GPLv3 (see LICENSE)
+#  License:    AGPL-3.0-or-later (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 MAILCOW_DIR="/opt/mailcow-dockerized"

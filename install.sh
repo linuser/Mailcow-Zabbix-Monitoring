@@ -51,12 +51,9 @@ echo ""
 echo -e "${BLUE}=== [1/5] Installing scripts ===${NC}"
 # ====================================================================
 
-# Collector + Reader
-for SCRIPT in mailcow-reader.sh; do
-    cp "$SCRIPT_DIR/scripts/$SCRIPT" /usr/local/bin/
-    chmod +x /usr/local/bin/$SCRIPT
-    echo -e "  ${GREEN}✓ $SCRIPT${NC}"
-done
+# Reader (der Collector folgt gleich danach)
+install -o root -g root -m 0755 "$SCRIPT_DIR/scripts/mailcow-reader.sh" /usr/local/bin/
+echo -e "  ${GREEN}✓ mailcow-reader.sh${NC}"
 
 # Python Collector
 cp "$SCRIPT_DIR/scripts/mailcow-collector.py" /usr/local/bin/
@@ -68,7 +65,10 @@ rm -f /usr/local/bin/mailcow-collector.sh
 echo -e "  ${GREEN}✓ mailcow-collector.sh (Bash) removed${NC}"
 
 # Alte Scripts aus v4.0-v4.3 aufräumen
-for OLD_SCRIPT in check_postfix_running.sh check_backup_age.sh check_backup_size.sh \
+# dovecot_check.sh: seit #opt10 macht collect_dovecot() alles inline via docker
+# exec. Das Script wurde nie aufgerufen, lag aber weiter in /usr/local/bin.
+for OLD_SCRIPT in dovecot_check.sh \
+                  check_postfix_running.sh check_backup_age.sh check_backup_size.sh \
                   check_backup_count.sh check_backup_exists.sh check_backup_zero.sh \
                   check_dovecot_running.sh check_rspamd_running.sh check_fail2ban.sh \
                   check_disk_usage.sh check_vmail.sh mailcow_version.sh; do
@@ -85,7 +85,7 @@ echo -e "  ${GREEN}✓ Slow cache reset${NC}"
 # Bestehende Scripts aktualisieren
 for SCRIPT in check_rbl.sh check_dns.sh check_tls.sh check_ptr.sh check_open_relay.sh \
               check_security_audit.sh \
-              dovecot_check.sh sync_jobs_check.sh \
+              sync_jobs_check.sh \
               postfix_stats_docker.sh postfix_log_analysis.sh; do
     if [ -f "$SCRIPT_DIR/scripts/$SCRIPT" ]; then
         cp "$SCRIPT_DIR/scripts/$SCRIPT" /usr/local/bin/

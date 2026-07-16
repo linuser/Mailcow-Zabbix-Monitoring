@@ -6,7 +6,7 @@
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Sammelt 246 Metriken aus 22 Modulen (Docker, MySQL, DNS,
 #               TLS, Rspamd, ClamAV, Postscreen, Bayes u.v.m.) in JSON
-#  License:    GPLv3 (see LICENSE)
+#  License:    AGPL-3.0-or-later (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 """

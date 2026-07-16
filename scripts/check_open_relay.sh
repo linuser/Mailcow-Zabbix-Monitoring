@@ -5,11 +5,9 @@
 #  Vendor:     Alexander Fox | PlaNet Fox
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft ob mynetworks unsichere Einträge enthält (0.0.0.0/0 oder ::/0)
-#  License:    GPLv3 (see LICENSE)
+#  License:    AGPL-3.0-or-later (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
-MAILCOW_DIR="/opt/mailcow-dockerized"
-
 # --- Postfix Container ermitteln ---
 POSTFIX_CONTAINER=$(docker ps --filter "name=postfix" --format "{{.Names}}" 2>/dev/null | grep -i mailcow | head -1)
 

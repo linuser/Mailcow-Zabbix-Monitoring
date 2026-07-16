@@ -101,7 +101,23 @@ systemctl restart zabbix-agent2
 
 ## Installation
 
-The installer uses two variables that you may need to adjust at the top of `install.sh`:
+### 1. Get the code
+
+```bash
+git clone https://github.com/linuser/Mailcow-Zabbix-Monitoring.git
+cd Mailcow-Zabbix-Monitoring
+```
+
+Without git:
+
+```bash
+curl -sL https://github.com/linuser/Mailcow-Zabbix-Monitoring/archive/refs/heads/main.tar.gz | tar xz
+cd Mailcow-Zabbix-Monitoring-main
+```
+
+### 2. Adjust paths if needed
+
+The installer uses two variables at the top of `install.sh`:
 
 ```bash
 MAILCOW_DIR="/opt/mailcow-dockerized"   # Path to your Mailcow installation
@@ -110,23 +126,51 @@ BACKUP_PATH="/opt/backup"                # Path to your Mailcow backup directory
 
 If your Mailcow is installed elsewhere or your backups are in a different location, edit these before running the installer.
 
+### 3. Run the installer
+
 ```bash
-git clone https://github.com/linuser/Mailcow-Zabbix-Monitoring.git
-cd Mailcow-Zabbix-Monitoring
-# Optional: edit MAILCOW_DIR and BACKUP_PATH in install.sh
 sudo ./install.sh
 ```
 
-Then in Zabbix:
-1. **Data collection → Templates → Import** → select `templates/mailcow-complete-monitoring.yaml`
-2. **Link template** to your Mailcow host: "Mailcow Complete Monitoring v1.0"
-3. Wait 5–10 minutes for dashboards to populate
+It installs the collector and check scripts, sets up the systemd timer, writes the
+UserParameter config — and checks your agent's `ServerActive`/`Hostname`. Take that
+check seriously: without a correct `ServerActive`, none of the 246 items will ever
+collect data (see [Zabbix Agent Configuration](#zabbix-agent-configuration)).
+
+### 4. Import the template
+
+1. **Data collection → Templates → Import**
+2. Select `templates/mailcow-complete-monitoring.yaml`
+3. Tick **☑ Create new** *and* **☑ Update existing** for all object types.
+   Leave **Delete missing** off.
+4. The template row must then show: **Items 246 | Triggers 63 | Dashboards 19**
+
+   No number next to *Triggers* means "Create new" was not ticked.
+
+5. **Link the template** to your Mailcow host: "Mailcow Complete Monitoring v1.0"
+
+Data appears within about a minute. If it does not, `ServerActive` is the first
+thing to check — not patience.
+
+### 5. Where to find the dashboards
+
+The 19 dashboards are **template dashboards**: they belong to the host, not to the
+global dashboard list.
+
+*Monitoring → Hosts* → your host's row → **Dashboards** → "01 - Postfix"
+
+They will **not** appear under *Monitoring → Dashboards*, and they render empty
+under *Data collection → Templates → Dashboards* — there is no host context there.
 
 ### Verify
 
 ```bash
 sudo ./test-complete.sh
 ```
+
+> This queries the UserParameters passively via `zabbix_get`. It reports success
+> even when `ServerActive` is wrong and Zabbix is collecting nothing. Always
+> confirm in *Monitoring → Latest data* as well.
 
 ### Force Immediate Data
 
@@ -137,29 +181,47 @@ systemctl restart zabbix-agent2             # force re-check
 
 ## Update
 
-To update an existing installation to a newer version:
-
 ```bash
 cd ~/Mailcow-Zabbix-Monitoring
 git pull
-sudo ./install.sh
+sudo ./update.sh --check     # shows what would change, changes nothing
+sudo ./update.sh
 ```
+
+`update.sh` backs up the current scripts to `/var/backups/mailcow-zabbix/<date>/`,
+replaces only what actually differs, clears the RBL cache, restarts the timer and
+then verifies the collected values:
+
+```
+OK    246 metrics in the JSON
+OK    Postfix running: 1
+OK    Rspamd scanned: 73890
+```
+
+Roll back with `sudo ./update.sh --rollback`.
 
 Then re-import the template in Zabbix:
+
 1. **Data collection → Templates → Import**
 2. Select `templates/mailcow-complete-monitoring.yaml`
-3. Check **☑ Update existing** — this updates items, triggers and dashboards in-place without losing history
-4. Restart the agent:
+3. Tick **☑ Create new** *and* **☑ Update existing** for all object types.
+   Leave **Delete missing** off.
+4. Verify the template row shows: **Items 246 | Triggers 63 | Dashboards 19**
 
-```bash
-systemctl start mailcow-monitor.service
-systemctl restart zabbix-agent2
-```
+> **Do not tick "Update existing" alone.** Zabbix then skips objects that do not
+> exist yet — and still reports "Imported successfully". That is how installations
+> ended up with 0 of 71 triggers while items worked fine.
+
+Existing history is preserved: the template UUID and technical name are stable, so
+Zabbix updates in place.
 
 If items show "Not supported" after the update:
-1. **Configuration → Hosts → your host → Items**
+1. **Data collection → Hosts → your host → Items**
 2. Filter by "Not supported"
 3. Select all → **Enable**
+
+Alternatively, install from a release archive instead of git — see
+[UPDATE.md](UPDATE.md).
 
 ## File Structure
 
@@ -180,7 +242,6 @@ mailcow-monitoring/
 │   ├── check_ptr.sh                  # PTR record check
 │   ├── check_open_relay.sh           # Open relay check
 │   ├── check_security_audit.sh       # DANE/MTA-STS/TLS-RPT/BIMI
-│   ├── dovecot_check.sh              # Dovecot stats
 │   ├── sync_jobs_check.sh            # IMAP sync jobs
 │   ├── postfix_stats_docker.sh       # Postfix queue stats
 │   └── postfix_log_analysis.sh       # Postfix logs + Postscreen

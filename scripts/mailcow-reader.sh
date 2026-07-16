@@ -6,7 +6,7 @@
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Liest Metriken aus /var/tmp/mailcow-monitor.json
 #               Wird von Zabbix UserParameters aufgerufen - keine Rechte nötig
-#  License:    GPLv3 (see LICENSE)
+#  License:    AGPL-3.0-or-later (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 #  v1.0: Python3 für alle Value-Typen (LLD JSON-Arrays etc.)

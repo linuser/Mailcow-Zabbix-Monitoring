@@ -1,6 +1,6 @@
 # Mailcow Zabbix Monitoring - Projektdokumentation
 
-## Version: v1.0 (Stand: 18.02.2026)
+## Version: v1.2 (Stand: 16.07.2026)
 
 ---
 
@@ -43,7 +43,7 @@
 
 ---
 
-## Übersicht: 246 UserParameters / 303 Template Items / 71 Trigger
+## Übersicht: 246 UserParameters / 246 Template Items + 21 LLD-Prototypen / 71 Trigger
 
 | # | Modul | Items | Trigger | Beschreibung |
 |---|-------|-------|---------|-------------|
@@ -203,7 +203,6 @@ mailcow-monitoring-v1.0/
 │   ├── check_security_audit.sh   # DANE/MTA-STS/TLS-RPT/BIMI (Slow-Cache)
 │   ├── postfix_stats_docker.sh   # Postfix Queue Stats
 │   ├── postfix_log_analysis.sh   # Postfix Log + Postscreen Analyse
-│   ├── dovecot_check.sh          # Dovecot-Status
 │   └── sync_jobs_check.sh        # Sync-Job-Status
 ├── templates/
 │   └── mailcow-complete-monitoring.yaml  # Zabbix 7.0 Template
@@ -223,23 +222,66 @@ mailcow-monitoring-v1.0/
 ## Installation
 
 ```bash
-# 1. Paket entpacken
-cd ~ && unzip mailcow-monitoring-v1.0.zip
-cd mailcow-monitoring-v1.0
+# 1. Code holen
+git clone https://github.com/linuser/Mailcow-Zabbix-Monitoring.git
+cd Mailcow-Zabbix-Monitoring
+
+#    ohne git:
+#    curl -sL https://github.com/linuser/Mailcow-Zabbix-Monitoring/archive/refs/heads/main.tar.gz | tar xz
+#    cd Mailcow-Zabbix-Monitoring-main
 
 # 2. Installer ausführen
 sudo ./install.sh
 
 # 3. Template in Zabbix importieren
-#    Configuration → Templates → Import
+#    Data collection → Templates → Import
 #    Datei: templates/mailcow-complete-monitoring.yaml
+#    WICHTIG: "Create new" UND "Update existing" anhaken, "Delete missing" NICHT.
+#    Kontrolle danach: Items 246 | Triggers 63 | Dashboards 19
 
 # 4. Template dem Host zuweisen
-#    Configuration → Hosts → cow.xxx.de → Templates → Link
+#    Data collection → Hosts → <host> → Templates → Link
+#    "Mailcow Complete Monitoring v1.0"
 
 # 5. Test
 ./test-complete.sh
 ```
+
+### Voraussetzung: ServerActive
+
+Alle 246 Items sind **aktive** Agent-Checks. Der Agent holt sie selbst von der
+Adresse in `ServerActive`; `Server=` regelt nur passive Abfragen und genügt
+nicht. Fehlt `ServerActive`, sammelt kein einziges Item Daten — ohne
+Fehlermeldung, Items und Trigger sind trotzdem sichtbar.
+
+```ini
+# /etc/zabbix/zabbix_agent2.conf
+Server=<zabbix-server>,127.0.0.1
+ServerActive=<zabbix-server>
+Hostname=<host name wie in Zabbix>
+```
+
+`install.sh` und `update.sh` prüfen das und warnen. Details: README / UPDATE.md.
+
+## Update
+
+```bash
+cd ~/Mailcow-Zabbix-Monitoring
+git pull
+sudo ./update.sh --check     # zeigt an, was sich aendern wuerde
+sudo ./update.sh
+```
+
+`update.sh` sichert die bestehenden Scripts nach
+`/var/backups/mailcow-zabbix/<datum>/`, ersetzt nur, was sich unterscheidet,
+leert den RBL-Cache, startet den Timer neu und verifiziert anschließend die
+erzeugten Werte. Zurück geht es mit `sudo ./update.sh --rollback`.
+
+Danach das Template neu importieren — ebenfalls mit **"Create new" UND
+"Update existing"**. Mit "Update existing" allein legt Zabbix fehlende Objekte
+nicht an und meldet trotzdem Erfolg; so entstanden Installationen mit 0 von 71
+Triggern. Die History bleibt erhalten, da Template-UUID und technischer Name
+stabil sind.
 
 ### Nach Template-Reimport sofort alle Daten abrufen
 
@@ -251,6 +293,94 @@ systemctl start mailcow-monitor.service
 systemctl restart zabbix-agent2
 ```
 
+### Wo sind die Dashboards?
+
+Die 19 Dashboards sind Template-Dashboards und hängen am Host:
+*Monitoring → Hosts* → Zeile des Hosts → **Dashboards**.
+Unter *Monitoring → Dashboards* erscheinen sie nicht.
+
+---
+
+## Mailflow (pflogsumm) — 28 Items
+
+Das einzige Modul, das nicht den Ist-Zustand misst, sondern **Durchsatz über ein
+Zeitfenster**. Grundlage ist `pflogsumm`, gefüttert aus den Postfix-Logs der
+letzten Stunde:
+
+```
+docker logs --since 1h <postfix-container> | pflogsumm
+```
+
+Alle Werte sind damit **Stundensummen**, keine Momentaufnahmen. Ein Item wie
+`mailcow.mail.received` heißt „empfangen in der letzten Stunde", nicht „aktuell
+in Bearbeitung".
+
+### Eigener Cache (5 Minuten)
+
+`pflogsumm` über eine Stunde Logs ist teuer (Timeout: 60 s). Das Modul hält
+deshalb einen eigenen Cache, getrennt vom 1h-Slow-Cache der übrigen Module:
+
+```
+/var/tmp/mailcow-monitor-mailflow.json   (max. 5 Minuten alt)
+```
+
+Ist der Cache frisch, liefert der Collector ihn direkt aus, ohne pflogsumm
+erneut zu starten. Die 5 Minuten sind der Kompromiss: frisch genug für
+Anomalie-Trigger, selten genug, um den Host nicht zu belasten.
+
+### Voraussetzung
+
+`pflogsumm` muss auf dem **Host** installiert sein (`apt install pflogsumm`) —
+nicht im Container. `install.sh` installiert es automatisch nach; schlägt das
+fehl, liefert das Modul stillschweigend Nullen. Fehlt der Postfix-Container oder
+ist das Log leer, ebenso.
+
+### Die 28 Items
+
+| Gruppe | Items | Inhalt |
+|---|---|---|
+| Grand Totals | 13 | received, delivered, forwarded, deferred, bounced, rejected, reject.rate, bytes.received, bytes.delivered, senders, recipients, sending.domains, recipient.domains |
+| Top-Listen | 4 | top.senders, top.recipients, top.sending.domains, top.recipient.domains (je Top 5, als Text) |
+| Reject-Aufschlüsselung | 6 | reject.rbl, reject.unknown.user, reject.relay.denied, reject.domain.notfound, reject.cleanup (Milter/Rspamd), reject.detail |
+| Bounce-Details | 1 | bounce.detail |
+| Warnungen | 4 | warnings.sasl, warnings.tls, warnings.dns, warnings.postscreen |
+
+### Trigger (9)
+
+Fünf davon vergleichen gegen die eigene Historie statt gegen feste Schwellen —
+siehe Abschnitt „Anomalie-Erkennung":
+
+| Trigger | Bedingung | Stufe |
+|---|---|---|
+| Mail volume spike | `> 5 ×` Wochen-Baseline | Warning |
+| Mail volume drop | `< 0.2 ×` Wochen-Baseline | High |
+| Deferred spike | `> 5 ×` Baseline | Warning |
+| Bounce spike | `> 5 ×` Baseline | Warning |
+| Reject spike | `> 10 ×` Baseline | Warning |
+| Deferred absolut | `> 10` | Warning |
+| Bounce absolut | `> 50` | High |
+| Reject rate | `> 80 %` | Warning |
+| SASL warnings | `> 100` | Warning |
+
+**Volume drop ist High, spike nur Warning** — ein Einbruch bedeutet meist, dass
+der Mailempfang steht (DNS, Firewall, Postfix), während ein Ausschlag oft nur
+eine Newsletter-Welle ist. Beide schließen sich gegenseitig aus und haben
+deshalb bewusst *keine* Dependency.
+
+Die Baseline braucht **~1 Woche History**, bis sie trägt. Frische
+Installationen alarmieren dank Mindest-Baseline (`trendavg > 5`) nicht sofort.
+
+### Einschränkungen
+
+- **Nur auf Servern mit direktem Mail-Empfang sinnvoll.** Hinter einem
+  Smarthost oder auf reinen Relay-Setups sind die Zahlen wenig aussagekräftig.
+- Die Baseline ist ein reiner Wochenschnitt (`trendavg`, 1w) — sie kennt keine
+  Wochentag- oder Tageszeit-Saisonalität. Dienstag 10 Uhr wird also gegen den
+  Schnitt inklusive Sonntagnacht gemessen. Für saisonale Erkennung wäre
+  `baselinewma()` der passende Ersatz (offen für v1.3).
+- Schlägt pflogsumm fehl, sind alle 28 Werte 0 — nicht unterscheidbar von einem
+  echten Nullstunde-Ergebnis. Siehe „Bekannte Einschränkungen".
+
 ---
 
 ## Collector-Module (22)
@@ -259,7 +389,6 @@ systemctl restart zabbix-agent2
 |-------|-------------|-------|
 | collect_postfix | docker exec, queue | 60s |
 | collect_postfix_logs | docker logs → postfix_log_analysis.sh | 60s |
-| collect_dovecot | dovecot_check.sh | 60s |
 | collect_rspamd | Rspamd API :11334 + `rspamc stat` (Bayes) | 60s |
 | collect_fail2ban | docker exec, iptables | 60s |
 | collect_disk | df, du | 60s |
@@ -302,7 +431,7 @@ systemctl restart zabbix-agent2
 
 ## Lizenz
 
-**GPLv3** — Dieser Code muss Open Source bleiben. Bei Nutzung, Änderung oder Weitergabe muss der ursprüngliche Autor genannt werden.
+**AGPL-3.0-or-later** — Dieser Code muss Open Source bleiben. Bei Nutzung, Änderung oder Weitergabe muss der ursprüngliche Autor genannt werden.
 
 © 2026 Alexander Fox | PlaNet Fox — https://github.com/linuser/Mailcow-Zabbix-Monitoring
 

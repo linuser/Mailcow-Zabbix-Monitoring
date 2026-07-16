@@ -61,25 +61,65 @@ systemctl restart zabbix-agent2
 
 ## Installation
 
-Der Installer nutzt zwei Variablen die ggf. angepasst werden müssen (am Anfang von `install.sh`):
+### 1. Code holen
+
+```bash
+git clone https://github.com/linuser/Mailcow-Zabbix-Monitoring.git
+cd Mailcow-Zabbix-Monitoring
+```
+
+Ohne git:
+
+```bash
+curl -sL https://github.com/linuser/Mailcow-Zabbix-Monitoring/archive/refs/heads/main.tar.gz | tar xz
+cd Mailcow-Zabbix-Monitoring-main
+```
+
+### 2. Pfade anpassen (falls nötig)
+
+Der Installer nutzt zwei Variablen am Anfang von `install.sh`:
 
 ```bash
 MAILCOW_DIR="/opt/mailcow-dockerized"   # Pfad zur Mailcow-Installation
 BACKUP_PATH="/opt/backup"                # Pfad zum Backup-Verzeichnis
 ```
 
+### 3. Installer starten
+
 ```bash
-unzip mailcow-monitoring-v1.0.zip
-cd mailcow-monitoring-v1.0
-# Optional: MAILCOW_DIR und BACKUP_PATH in install.sh anpassen
 sudo ./install.sh
 ```
 
-Nach der Installation:
-1. Template importieren: `templates/mailcow-complete-monitoring.yaml`
-2. In Zabbix: Data collection → Templates → Import (☑ Update existing)
-3. Host zuweisen: "Mailcow Complete Monitoring v1.0"
-4. 5–10 Min warten, dann Dashboard prüfen
+Er installiert Collector und Check-Scripts, richtet den systemd-Timer ein, legt die
+UserParameter-Config an — und prüft `ServerActive`/`Hostname` des Agents. Diese
+Prüfung ernst nehmen: ohne korrektes `ServerActive` sammelt **keines** der 246
+Items jemals Daten (siehe [Zabbix Agent Konfiguration](#zabbix-agent-konfiguration)).
+
+### 4. Template importieren
+
+1. **Data collection → Templates → Import**
+2. `templates/mailcow-complete-monitoring.yaml` auswählen
+3. **☑ Create new** *und* **☑ Update existing** bei allen Objekttypen anhaken.
+   **Delete missing** bleibt aus.
+4. In der Template-Zeile muss danach stehen: **Items 246 | Triggers 63 | Dashboards 19**
+
+   Steht bei *Triggers* keine Zahl, war „Create new" nicht gesetzt.
+
+5. **Template dem Host zuweisen**: „Mailcow Complete Monitoring v1.0"
+
+Daten erscheinen binnen etwa einer Minute. Falls nicht, ist `ServerActive` das
+Erste, was man prüft — nicht Geduld.
+
+### 5. Wo sind die Dashboards?
+
+Die 19 Dashboards sind **Template-Dashboards**: sie gehören zum Host, nicht in die
+globale Dashboard-Liste.
+
+*Monitoring → Hosts* → Zeile des Hosts → **Dashboards** → „01 - Postfix"
+
+Unter *Monitoring → Dashboards* tauchen sie **nicht** auf, und unter
+*Data collection → Templates → Dashboards* sind sie leer — dort fehlt der
+Host-Bezug.
 
 ## Test
 
@@ -89,29 +129,46 @@ sudo ./test-complete.sh
 
 ## Update
 
-Bestehende Installation auf eine neuere Version aktualisieren:
-
 ```bash
 cd ~/Mailcow-Zabbix-Monitoring
 git pull
-sudo ./install.sh
+sudo ./update.sh --check     # zeigt an, was sich aendern wuerde
+sudo ./update.sh
 ```
+
+`update.sh` sichert die aktuellen Scripts nach `/var/backups/mailcow-zabbix/<datum>/`,
+ersetzt nur, was sich tatsächlich unterscheidet, leert den RBL-Cache, startet den
+Timer neu und verifiziert anschließend die gesammelten Werte:
+
+```
+OK    246 metrics in the JSON
+OK    Postfix running: 1
+OK    Rspamd scanned: 73890
+```
+
+Zurück geht es mit `sudo ./update.sh --rollback`.
 
 Danach das Template in Zabbix neu importieren:
+
 1. **Data collection → Templates → Import**
 2. `templates/mailcow-complete-monitoring.yaml` auswählen
-3. **☑ Update existing** aktivieren — bestehende Items, Trigger und Dashboards werden aktualisiert, History bleibt erhalten
-4. Agent neu starten:
+3. **☑ Create new** *und* **☑ Update existing** bei allen Objekttypen anhaken.
+   **Delete missing** bleibt aus.
+4. Kontrolle in der Template-Zeile: **Items 246 | Triggers 63 | Dashboards 19**
 
-```bash
-systemctl start mailcow-monitor.service
-systemctl restart zabbix-agent2
-```
+> **Nicht nur „Update existing" anhaken.** Zabbix überspringt dann Objekte, die
+> noch nicht existieren — und meldet trotzdem „Imported successfully". Genau so
+> entstanden Installationen mit 0 von 71 Triggern, während die Items liefen.
 
-Falls nach dem Update Items als "Not supported" erscheinen:
-1. **Configuration → Hosts → Dein Host → Items**
-2. Filter auf "Not supported"
+Die History bleibt erhalten: Template-UUID und technischer Name sind stabil,
+Zabbix aktualisiert in-place.
+
+Falls nach dem Update Items als „Not supported" erscheinen:
+1. **Data collection → Hosts → Dein Host → Items**
+2. Filter auf „Not supported"
 3. Alle markieren → **Enable**
+
+Alternativ per Release-Archiv statt git — siehe [UPDATE.de.md](UPDATE.de.md).
 
 ## Paketstruktur
 
@@ -132,7 +189,6 @@ mailcow-monitoring-v1.0/
 │   ├── check_ptr.sh                  # PTR-Record
 │   ├── check_open_relay.sh           # Open-Relay-Check
 │   ├── check_security_audit.sh       # DANE/MTA-STS/TLS-RPT/BIMI
-│   ├── dovecot_check.sh              # Dovecot Stats
 │   ├── sync_jobs_check.sh            # Sync Jobs
 │   ├── postfix_stats_docker.sh       # Postfix Stats
 │   └── postfix_log_analysis.sh       # Postfix Logs + Postscreen

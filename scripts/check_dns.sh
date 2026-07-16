@@ -6,7 +6,7 @@
 #  Project:    https://github.com/linuser/Mailcow-Zabbix-Monitoring
 #  Description: Prüft SPF/DKIM/DMARC für alle aktiven Mail-Domains
 #  Usage:      check_dns.sh [spf|dkim|dmarc|detail|domains]
-#  License:    GPLv3 (see LICENSE)
+#  License:    AGPL-3.0-or-later (see LICENSE)
 #  Created with Open Source and ♥
 # ====================================================================
 

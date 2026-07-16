@@ -89,6 +89,55 @@
 - `docker ps --filter name=postfix` matcht seit neueren Mailcow-Versionen auch
   `postfix-tlspol-mailcow-1`. Aktuell greift die Auswahl zufaellig richtig;
   ein exaktes Matching waere robuster.
+### Aufraeumen
+- **`scripts/dovecot_check.sh` entfernt.** Seit der Inline-Optimierung (#opt10)
+  sammelt `collect_dovecot()` alles selbst per docker exec; das Script wurde von
+  niemandem mehr aufgerufen, lag aber weiter in `/usr/local/bin`, wurde bei jedem
+  Update gesichert und war in beiden READMEs sowie der DOKU als aktives Modul
+  gefuehrt. `install.sh` entfernt es jetzt bei Bestandsinstallationen mit.
+  (Einziger Orphan - alle uebrigen Scripts haben nachweislich Aufrufer.)
+- **Lizenz-Header vereinheitlicht:** 10 von 15 Dateien trugen noch
+  `License: GPLv3`, waehrend die LICENSE-Datei bereits AGPL-3.0 ist. Jetzt
+  durchgehend `AGPL-3.0-or-later`.
+- **shellcheck:** die drei verbliebenen Warnungen behoben - unbenutzte Variable
+  `MAILCOW_DIR` in `check_open_relay.sh` (SC2034), Schleife ueber ein einzelnes
+  Element in `install.sh` (SC2043), `local x=$(...)` maskierte Rueckgabewerte in
+  `postfix_stats_docker.sh` (SC2155). Das Repo ist jetzt auch auf
+  `--severity=warning` sauber, nicht nur auf der CI-Stufe `--severity=error`.
+
+### Dokumentation: Installation und Update korrigiert
+- Beide READMEs wiesen im Update-Abschnitt an, **nur** "☑ Update existing"
+  anzuhaken. Genau damit legt Zabbix fehlende Objekte nicht an und meldet
+  trotzdem Erfolg - die Ursache fuer Installationen mit 0 von 71 Triggern.
+  Jetzt durchgehend "Create new" UND "Update existing", inklusive Kontrollwert
+  (Items 246 | Triggers 63 | Dashboards 19).
+- Update-Weg zeigte auf `install.sh`; korrekt ist `update.sh` (Backup,
+  --check, --rollback, Verifikation).
+- Installation via GitHub dokumentiert (git clone und tar.gz-Variante); die
+  deutsche Fassung verwies noch auf eine nicht existierende
+  `mailcow-monitoring-v1.0.zip`.
+- Ergaenzt: wo die Template-Dashboards zu finden sind (Monitoring -> Hosts ->
+  Host -> Dashboards, nicht unter Monitoring -> Dashboards).
+- Entfernt: "5-10 Minuten warten, dann Dashboard pruefen". Daten erscheinen
+  binnen einer Minute; blieb es leer, war es nie Geduld, sondern ServerActive.
+- **Mailflow-Kapitel** in der DOKU ergaenzt. Das Modul war bisher nur in
+  Tabellenzeilen erwaehnt, obwohl es mit 28 Items und 9 Triggern das groesste
+  ist und als einziges Durchsatz statt Ist-Zustand misst. Neu dokumentiert:
+  pflogsumm ueber `docker logs --since 1h` (alle Werte sind Stundensummen),
+  eigener 5-Minuten-Cache getrennt vom 1h-Slow-Cache, pflogsumm als
+  Host-Voraussetzung, Aufschluesselung der 28 Items, die 9 Trigger inkl.
+  Begruendung warum "volume drop" High und "spike" nur Warning ist, sowie die
+  Grenzen (Baseline ohne Wochentag-Saisonalitaet, stille Nullen bei Fehlschlag).
+- **MAILCOW-MONITORING-DOKU.md** nachgezogen: Kopf stand auf "v1.0 (Stand:
+  18.02.2026)", die Installation verwies auf eine nicht existierende
+  `mailcow-monitoring-v1.0.zip`, ein Update-Abschnitt fehlte vollstaendig, und
+  die Menuepfade nannten "Configuration -> Templates" (heisst seit Zabbix 6.0
+  "Data collection"). Jetzt: Installation via GitHub, Update via `git pull` +
+  `update.sh`, Import-Optionen, ServerActive und Fundort der Dashboards.
+  Zahlendreher korrigiert: "303 Template Items" -> 246 Items + 21 LLD-Prototypen.
+- `UPDATE.md` jetzt englisch, deutsche Fassung als `UPDATE.de.md` - analog zum
+  bestehenden README-Muster.
+
 ### Bugfix: v1.2-Fixes erreichten Neuinstallationen nicht
 - `ServerActive` wurde nur im Update-Pfad geprueft (`update.sh`) und nur in
   `UPDATE.md` dokumentiert. `install.sh` pruefte es gar nicht, und beide READMEs
