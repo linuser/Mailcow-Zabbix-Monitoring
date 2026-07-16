@@ -5915,7 +5915,7 @@ zabbix_export:
           value: mailcow
       trigger_prototypes:
       - uuid: a6f4495167f8420f851eef04bd4d3a20
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.domain.usage_pct[{{#DOMAIN}}])>{$MAILCOW.QUOTA.WARN}
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.domain.usage_pct[{#DOMAIN}])>{$MAILCOW.QUOTA.WARN}
         name: 'Mailcow: Domain [{#DOMAIN}] quota usage is high'
         priority: WARNING
         manual_close: 'YES'
@@ -5925,7 +5925,7 @@ zabbix_export:
         - tag: scope
           value: capacity
       - uuid: 6d3459da903f41238c8f2327cf401889
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.domain.usage_pct[{{#DOMAIN}}])>{$MAILCOW.QUOTA.CRIT}
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.domain.usage_pct[{#DOMAIN}])>{$MAILCOW.QUOTA.CRIT}
         name: 'Mailcow: Domain [{#DOMAIN}] quota usage is critical'
         priority: HIGH
         manual_close: 'YES'
@@ -6036,7 +6036,7 @@ zabbix_export:
           value: mailcow
       trigger_prototypes:
       - uuid: f568b4d1eb5545868429355514af2062
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.lld.usage_pct[{{#MAILBOX}}])>{$MAILCOW.QUOTA.WARN}
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.lld.usage_pct[{#MAILBOX}])>{$MAILCOW.QUOTA.WARN}
         name: 'Mailcow: Mailbox [{#MAILBOX}] quota usage is high'
         priority: WARNING
         manual_close: 'YES'
@@ -6046,7 +6046,7 @@ zabbix_export:
         - tag: scope
           value: capacity
       - uuid: 29e82efac2c845558dbd514c5b649fdd
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.lld.usage_pct[{{#MAILBOX}}])>{$MAILCOW.QUOTA.CRIT}
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.lld.usage_pct[{#MAILBOX}])>{$MAILCOW.QUOTA.CRIT}
         name: 'Mailcow: Mailbox [{#MAILBOX}] quota usage is critical'
         priority: HIGH
         manual_close: 'YES'
@@ -6184,7 +6184,7 @@ zabbix_export:
         - tag: scope
           value: notice
       - uuid: 85ee8a56fcc64ba089c6d7fccdf08726
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.syncjob.age_hours[{{#SYNCJOB_ID}}])>{$MAILCOW.SYNCJOB.AGE.MAX}
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.syncjob.age_hours[{#SYNCJOB_ID}])>{$MAILCOW.SYNCJOB.AGE.MAX}
         name: 'Mailcow: Syncjob [{#SYNCJOB_USER}] has not run recently'
         priority: WARNING
         manual_close: 'YES'
@@ -6349,7 +6349,7 @@ zabbix_export:
         - tag: scope
           value: notice
       - uuid: 415b930006d541f88ecf17f2bb176a5b
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.docker.mem_pct[{{#CONTAINER}}])>{$MAILCOW.CONTAINER.MEM.MAX}
+        expression: last(/mailcow_complete_monitoring_v45/mailcow.docker.mem_pct[{#CONTAINER}])>{$MAILCOW.CONTAINER.MEM.MAX}
         name: 'Mailcow: Container [{#CONTAINER}] memory usage is high'
         priority: WARNING
         manual_close: 'YES'
