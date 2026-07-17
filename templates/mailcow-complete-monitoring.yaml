@@ -50,7 +50,7 @@ zabbix_export:
       - uuid: 620ed6bcee2147ad87dc437239089428
         expression: last(/mailcow_complete_monitoring_v45/postfix.process.running)=0
         name: 'Mailcow: Postfix not running'
-        priority: DISASTER
+        priority: HIGH
         manual_close: 'YES'
         tags:
         - tag: scope
@@ -693,7 +693,7 @@ zabbix_export:
       - uuid: 6e43aecadbf5478286fcec82efb716bc
         expression: last(/mailcow_complete_monitoring_v45/mailcow.security.rbl.listed)>={$MAILCOW.RBL.CRITICAL}
         name: 'Mailcow: IP listed on RBL'
-        priority: DISASTER
+        priority: HIGH
         manual_close: 'YES'
         description: 'Mail server IP is listed on RBL blacklist(s)! Check: mxtoolbox.com/blacklists'
         opdata: '{ITEM.LASTVALUE1} list(s): {?last(/mailcow_complete_monitoring_v45/mailcow.security.rbl.detail)}'
@@ -734,7 +734,7 @@ zabbix_export:
       - uuid: 00ae22db91794cf98b74cab77dfb3dc6
         expression: last(/mailcow_complete_monitoring_v45/mailcow.security.open.relay)=1
         name: 'Mailcow: OPEN RELAY DETECTED'
-        priority: DISASTER
+        priority: HIGH
         manual_close: 'YES'
         tags:
         - tag: scope
@@ -1403,7 +1403,7 @@ zabbix_export:
       - uuid: 795f4b2ed82f4c918124192a781d6ef7
         expression: last(/mailcow_complete_monitoring_v45/mailcow.rspamd.running)=0
         name: 'Mailcow: Rspamd not running'
-        priority: DISASTER
+        priority: HIGH
         manual_close: 'YES'
         tags:
         - tag: scope
@@ -1559,7 +1559,7 @@ zabbix_export:
       - uuid: 133060ef38eb411286c11b36e560c062
         expression: last(/mailcow_complete_monitoring_v45/mailcow.dovecot.running)=0
         name: 'Mailcow: Dovecot not running'
-        priority: DISASTER
+        priority: HIGH
         manual_close: 'YES'
         tags:
         - tag: scope
@@ -3292,7 +3292,7 @@ zabbix_export:
       - uuid: 18382ad376e54d0086b3f91ccbc4dc50
         expression: last(/mailcow_complete_monitoring_v45/zabbix.agent.running)=0
         name: 'Mailcow: Zabbix agent not running'
-        priority: DISASTER
+        priority: HIGH
         manual_close: 'YES'
         tags:
         - tag: scope

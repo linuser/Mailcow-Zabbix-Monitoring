@@ -2,6 +2,18 @@
 
 > Entries from v1.2 onwards are written in English. Earlier entries are in German.
 
+## v1.3.1 (2026-07-16)
+
+### Changed — Zabbix template guideline conformance
+- **All 6 DISASTER-severity triggers downgraded to HIGH.** The guidelines state
+  that "there should be no triggers with disaster level severity in resource
+  templates" — disaster is reserved for top-level business-service triggers, to
+  avoid alert fatigue in component templates. Affected: Postfix / Dovecot / Rspamd
+  / Zabbix agent not running, IP listed on RBL, and open relay detected. This
+  reverses the deliberate deviation noted in v1.3.0. Severity only — trigger
+  expressions, dependencies, event names and tags are unchanged, so alerting
+  logic and history are unaffected (HIGH triggers went 27 → 33).
+
 ## v1.3.0 (2026-07-16)
 
 ### Changed — Zabbix template guideline conformance
