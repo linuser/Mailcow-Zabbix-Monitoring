@@ -9,7 +9,7 @@ zabbix_export:
     uuid: 33fee4d48e63458485cd0c65f9a7a787
     vendor:
       name: Alexander Fox | PlaNet Fox
-      version: '1.2'
+      version: '1.3'
     description: 'Vollständiges Mailcow-Dockerized Monitoring (246 Metriken, 71 Trigger, 19 Dashboards).
 
       Postfix, Dovecot, Rspamd (inkl. Bayes-Training), ClamAV, Docker Health, TLS/Zertifikate,
@@ -114,6 +114,7 @@ zabbix_export:
       name: 'Mailcow: Queue disk usage %'
       type: ZABBIX_ACTIVE
       key: mailcow.queue.disk
+      units: '%'
       delay: 5m
       history: 7d
       value_type: UNSIGNED
@@ -523,6 +524,7 @@ zabbix_export:
       name: 'Mailcow: TLS cert days remaining (443)'
       type: ZABBIX_ACTIVE
       key: mailcow.tls.cert.days.443
+      units: d
       delay: 6h
       history: 90d
       value_type: UNSIGNED
@@ -560,6 +562,7 @@ zabbix_export:
       name: 'Mailcow: TLS cert days remaining (587)'
       type: ZABBIX_ACTIVE
       key: mailcow.tls.cert.days.587
+      units: d
       delay: 6h
       history: 90d
       value_type: UNSIGNED
@@ -586,6 +589,7 @@ zabbix_export:
       name: 'Mailcow: TLS cert days remaining (993)'
       type: ZABBIX_ACTIVE
       key: mailcow.tls.cert.days.993
+      units: d
       delay: 6h
       history: 90d
       value_type: UNSIGNED
@@ -715,6 +719,8 @@ zabbix_export:
       name: 'Mailcow: Open relay detected'
       type: ZABBIX_ACTIVE
       key: mailcow.security.open.relay
+      valuemap:
+        name: Mailcow Boolean
       delay: 6h
       history: 30d
       value_type: UNSIGNED
@@ -992,6 +998,7 @@ zabbix_export:
       name: 'Mailcow: Root disk used %'
       type: ZABBIX_ACTIVE
       key: mailcow.disk.root.used
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -1043,6 +1050,7 @@ zabbix_export:
       name: 'Mailcow: Docker disk used %'
       type: ZABBIX_ACTIVE
       key: mailcow.disk.docker.used
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -1094,6 +1102,7 @@ zabbix_export:
       name: 'Mailcow: Log disk used %'
       type: ZABBIX_ACTIVE
       key: mailcow.disk.log.used
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -1173,6 +1182,7 @@ zabbix_export:
       name: 'Mailcow: vmail disk used %'
       type: ZABBIX_ACTIVE
       key: mailcow.disk.vmail.used
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -1198,6 +1208,7 @@ zabbix_export:
       name: 'Mailcow: vmail maildir size (MB)'
       type: ZABBIX_ACTIVE
       key: mailcow.disk.vmail.maildir.size
+      units: MB
       delay: 1h
       history: 90d
       value_type: UNSIGNED
@@ -1492,6 +1503,7 @@ zabbix_export:
       name: 'Mailcow: Rspamd spam rate %'
       type: ZABBIX_ACTIVE
       key: mailcow.rspamd.spam.rate
+      units: '%'
       delay: 5m
       history: 90d
       value_type: UNSIGNED
@@ -1505,6 +1517,7 @@ zabbix_export:
       name: 'Mailcow: Rspamd uptime (seconds)'
       type: ZABBIX_ACTIVE
       key: mailcow.rspamd.uptime
+      units: s
       delay: 5m
       history: 7d
       value_type: UNSIGNED
@@ -1668,6 +1681,7 @@ zabbix_export:
       name: 'Mailcow: Backup age (hours)'
       type: ZABBIX_ACTIVE
       key: mailcow.backup.age
+      units: h
       delay: 1h
       history: 90d
       value_type: UNSIGNED
@@ -1692,6 +1706,7 @@ zabbix_export:
       name: 'Mailcow: Backup size (MB)'
       type: ZABBIX_ACTIVE
       key: mailcow.backup.size
+      units: MB
       delay: 1h
       history: 90d
       value_type: UNSIGNED
@@ -1718,6 +1733,7 @@ zabbix_export:
       name: 'Mailcow: Backup disk free %'
       type: ZABBIX_ACTIVE
       key: mailcow.backup.disk.free
+      units: '%'
       delay: 30m
       history: 30d
       value_type: UNSIGNED
@@ -1803,6 +1819,8 @@ zabbix_export:
       name: 'Mailcow: Backup script exists'
       type: ZABBIX_ACTIVE
       key: mailcow.backup.script.exists
+      valuemap:
+        name: Mailcow Boolean
       delay: 1h
       history: 30d
       value_type: UNSIGNED
@@ -1887,6 +1905,7 @@ zabbix_export:
       name: 'Mailcow: Sync oldest run (hours)'
       type: ZABBIX_ACTIVE
       key: mailcow.sync.jobs.oldest_run
+      units: h
       delay: 1h
       history: 30d
       value_type: UNSIGNED
@@ -1957,6 +1976,7 @@ zabbix_export:
       name: 'Mailcow: Total mailbox usage (MB)'
       type: ZABBIX_ACTIVE
       key: mailcow.mailbox.quota.used.total
+      units: MB
       delay: 5m
       history: 90d
       value_type: UNSIGNED
@@ -1970,6 +1990,7 @@ zabbix_export:
       name: 'Mailcow: Mailboxes over 80% quota'
       type: ZABBIX_ACTIVE
       key: mailcow.mailbox.over.quota
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2230,6 +2251,7 @@ zabbix_export:
       name: 'Mailcow: Reject rate %'
       type: ZABBIX_ACTIVE
       key: mailcow.mail.reject.rate
+      units: '%'
       delay: 5m
       history: 90d
       value_type: UNSIGNED
@@ -2253,6 +2275,7 @@ zabbix_export:
       name: 'Mailcow: Bytes received (1h)'
       type: ZABBIX_ACTIVE
       key: mailcow.mail.bytes.received
+      units: B
       delay: 5m
       history: 90d
       value_type: UNSIGNED
@@ -2266,6 +2289,7 @@ zabbix_export:
       name: 'Mailcow: Bytes delivered (1h)'
       type: ZABBIX_ACTIVE
       key: mailcow.mail.bytes.delivered
+      units: B
       delay: 5m
       history: 90d
       value_type: UNSIGNED
@@ -2601,6 +2625,7 @@ zabbix_export:
       name: 'Mailcow: ClamAV daily DB age (days)'
       type: ZABBIX_ACTIVE
       key: mailcow.clamav.daily.age
+      units: d
       delay: 1h
       history: 90d
       value_type: UNSIGNED
@@ -2662,6 +2687,7 @@ zabbix_export:
       name: 'Mailcow: ClamAV DB size (MB)'
       type: ZABBIX_ACTIVE
       key: mailcow.clamav.db.size
+      units: MB
       delay: 1h
       history: 90d
       value_type: UNSIGNED
@@ -2675,6 +2701,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog overall health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.overall
+      units: '%'
       delay: 5m
       history: 90d
       value_type: UNSIGNED
@@ -2736,6 +2763,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog postfix health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.postfix
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2749,6 +2777,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog dovecot health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.dovecot
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2762,6 +2791,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog rspamd health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.rspamd
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2775,6 +2805,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog mysql health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.mysql
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2788,6 +2819,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog nginx health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.nginx
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2801,6 +2833,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog sogo health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.sogo
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2814,6 +2847,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog redis health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.redis
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2827,6 +2861,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog unbound health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.unbound
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2840,6 +2875,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog phpfpm health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.phpfpm
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2853,6 +2889,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog fail2ban health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.fail2ban
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2866,6 +2903,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog acme health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.acme
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2879,6 +2917,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog queue health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.queue
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2892,6 +2931,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog olefy health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.olefy
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2905,6 +2945,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog replication health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.replication
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -2918,6 +2959,7 @@ zabbix_export:
       name: 'Mailcow: Watchdog ratelimit health %'
       type: ZABBIX_ACTIVE
       key: mailcow.watchdog.ratelimit
+      units: '%'
       delay: 5m
       history: 30d
       value_type: UNSIGNED
@@ -3023,6 +3065,7 @@ zabbix_export:
       name: 'Mailcow: Rspamd Bayes ham ratio %'
       type: ZABBIX_ACTIVE
       key: mailcow.rspamd.bayes.ratio
+      units: '%'
       delay: 5m
       history: 90d
       value_type: FLOAT
@@ -3117,6 +3160,7 @@ zabbix_export:
       name: 'Mailcow: ACME cert days left'
       type: ZABBIX_ACTIVE
       key: mailcow.acme.cert.days.left
+      units: d
       delay: 1h
       history: 90d
       value_type: UNSIGNED
@@ -3257,6 +3301,7 @@ zabbix_export:
       name: 'Mailcow: Agent uptime (seconds)'
       type: ZABBIX_ACTIVE
       key: zabbix.agent.uptime
+      units: s
       delay: 5m
       history: 7d
       value_type: UNSIGNED
@@ -3451,6 +3496,8 @@ zabbix_export:
       name: 'Mailcow: Database reachable'
       type: ZABBIX_ACTIVE
       key: mailcow.db.reachable
+      valuemap:
+        name: Mailcow Boolean
       delay: '60'
       history: 30d
       value_type: UNSIGNED

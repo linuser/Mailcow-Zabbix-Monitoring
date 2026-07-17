@@ -2,6 +2,31 @@
 
 > Entries from v1.2 onwards are written in English. Earlier entries are in German.
 
+## v1.3.0 (2026-07-16)
+
+### Changed — Zabbix template guideline conformance
+- **Units added to 41 metric items.** The Zabbix template guidelines ask to
+  "provide units wherever possible". Following the template's existing label
+  convention: 26× `%` (rates, disk-used, all 15 watchdog health levels, Bayes
+  ratio), 5× `d` (certificate days remaining, ClamAV DB age), 4× `MB`, 2× `s`
+  (uptime), 2× `B` (mail bytes) and 2× `h` (backup / sync age). Items carrying a
+  unit went from 11 to 52. This is pure display metadata — item keys, history and
+  the collector are untouched, and plain counters (messages, bans, connections)
+  correctly stay unitless. Template vendor version bumped 1.2 → 1.3.
+- **Value maps completed for the remaining boolean items.**
+  `mailcow.security.open.relay`, `mailcow.backup.script.exists` and
+  `mailcow.db.reachable` now map their 0/1 through the existing "Mailcow Boolean"
+  value map (items with a value map: 23 → 26).
+
+_Audited against the official guidelines. Already-compliant areas confirmed: LLD
+rules/keys end in `discovery`, all item names use the `Location: Metric` form, all
+items carry a `component` tag, all triggers a `scope` tag, no `{HOST.NAME}` /
+`{ITEM.VALUE}` in names, `{$MAILCOW.*}` macro namespace. Open guideline items left
+to a deliberate decision: DISASTER-severity triggers (kept — for a mail server,
+service-down / RBL listing / open relay are genuinely disaster-level), and the
+template visible/technical name, group and `{$MAILCOW.RBL.CRITICAL}` abbreviation
+(identity / re-linking impact)._
+
 ## v1.2.2 (2026-07-16)
 
 ### Security
