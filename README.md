@@ -170,7 +170,7 @@ collect data (see [Zabbix Agent Configuration](#zabbix-agent-configuration)).
 
    No number next to *Triggers* means "Create new" was not ticked.
 
-5. **Link the template** to your Mailcow host: "Mailcow Complete Monitoring v1.0"
+5. **Link the template** to your Mailcow host: "Mailcow by Zabbix agent 2"
 
 Data appears within about a minute. If it does not, `ServerActive` is the first
 thing to check — not patience.
@@ -235,8 +235,8 @@ Then re-import the template in Zabbix:
 > exist yet — and still reports "Imported successfully". That is how installations
 > ended up with 0 of 71 triggers while items worked fine.
 
-Existing history is preserved: the template UUID and technical name are stable, so
-Zabbix updates in place.
+Existing history is preserved: Zabbix matches the template by its **UUID** (stable),
+so it updates in place — this holds even when the template's name changes.
 
 If items show "Not supported" after the update:
 1. **Data collection → Hosts → your host → Items**

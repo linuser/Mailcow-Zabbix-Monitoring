@@ -245,7 +245,7 @@ sudo ./install.sh
 
 # 4. Template dem Host zuweisen
 #    Data collection → Hosts → <host> → Templates → Link
-#    "Mailcow Complete Monitoring v1.0"
+#    "Mailcow by Zabbix agent 2"
 
 # 5. Test
 ./test-complete.sh

@@ -128,7 +128,7 @@ Items jemals Daten (siehe [Zabbix Agent Konfiguration](#zabbix-agent-konfigurati
 
    Steht bei *Triggers* keine Zahl, war „Create new" nicht gesetzt.
 
-5. **Template dem Host zuweisen**: „Mailcow Complete Monitoring v1.0"
+5. **Template dem Host zuweisen**: „Mailcow by Zabbix agent 2"
 
 Daten erscheinen binnen etwa einer Minute. Falls nicht, ist `ServerActive` das
 Erste, was man prüft — nicht Geduld.
@@ -183,8 +183,9 @@ Danach das Template in Zabbix neu importieren:
 > noch nicht existieren — und meldet trotzdem „Imported successfully". Genau so
 > entstanden Installationen mit 0 von 71 Triggern, während die Items liefen.
 
-Die History bleibt erhalten: Template-UUID und technischer Name sind stabil,
-Zabbix aktualisiert in-place.
+Die History bleibt erhalten: Zabbix ordnet das Template über seine **UUID** zu
+(die ist stabil) und aktualisiert in-place — das gilt auch, wenn sich der
+Template-Name ändert.
 
 Falls nach dem Update Items als „Not supported" erscheinen:
 1. **Data collection → Hosts → Dein Host → Items**

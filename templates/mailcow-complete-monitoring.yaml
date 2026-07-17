@@ -1,11 +1,11 @@
 zabbix_export:
   version: '7.0'
   template_groups:
-  - uuid: 592afdc3fec24f6b8ca7895744dc071a
-    name: Templates/Mailcow
+  - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+    name: Templates/Applications
   templates:
-  - template: mailcow_complete_monitoring_v45
-    name: Mailcow Complete Monitoring v1.0
+  - template: Mailcow by Zabbix agent 2
+    name: Mailcow by Zabbix agent 2
     uuid: 33fee4d48e63458485cd0c65f9a7a787
     vendor:
       name: Alexander Fox | PlaNet Fox
@@ -29,7 +29,7 @@ zabbix_export:
 
       '
     groups:
-    - name: Templates/Mailcow
+    - name: Templates/Applications
     items:
     - uuid: 586ae0004ef245c08afec52fb74c0213
       name: 'Mailcow: Postfix master running'
@@ -48,7 +48,7 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: 620ed6bcee2147ad87dc437239089428
-        expression: last(/mailcow_complete_monitoring_v45/postfix.process.running)=0
+        expression: last(/Mailcow by Zabbix agent 2/postfix.process.running)=0
         name: 'Mailcow: Postfix not running'
         priority: HIGH
         manual_close: 'YES'
@@ -70,9 +70,9 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 22dce308b2da45488078e2d225216f4b
-        expression: min(/mailcow_complete_monitoring_v45/postfix.pfmailq,5m)>{$MAILCOW.QUEUE.WARN}
+        expression: min(/Mailcow by Zabbix agent 2/postfix.pfmailq,5m)>{$MAILCOW.QUEUE.WARN}
         name: 'Mailcow: Mail queue is too large'
-        recovery_expression: max(/mailcow_complete_monitoring_v45/postfix.pfmailq,5m)<{$MAILCOW.QUEUE.RECOVER}
+        recovery_expression: max(/Mailcow by Zabbix agent 2/postfix.pfmailq,5m)<{$MAILCOW.QUEUE.RECOVER}
         priority: HIGH
         manual_close: 'YES'
         description: Mail queue has >50 messages for 5 minutes
@@ -152,7 +152,7 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 27b7073fb5ae4b6d83df608c510406da
-        expression: sum(/mailcow_complete_monitoring_v45/postfix.log.errors,1h)>10
+        expression: sum(/Mailcow by Zabbix agent 2/postfix.log.errors,1h)>10
         name: 'Mailcow: Postfix errors detected'
         priority: WARNING
         manual_close: 'YES'
@@ -360,7 +360,7 @@ zabbix_export:
       description: Von Postscreen abgelehnte Verbindungen
       triggers:
       - uuid: 23af2313c2e941c9b55730fed5ff9cec
-        expression: last(/mailcow_complete_monitoring_v45/postfix.postscreen.reject)>100
+        expression: last(/Mailcow by Zabbix agent 2/postfix.postscreen.reject)>100
         name: 'Mailcow: Postscreen rejecting heavily'
         priority: WARNING
         description: Mehr als 100 Postscreen-Rejects in 5 Minuten — möglicher Angriff
@@ -441,7 +441,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: 5c86d0e8aaf941dc880b76ed0340892f
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.https.check)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.tls.https.check)=0
         name: 'Mailcow: HTTPS not reachable'
         priority: HIGH
         manual_close: 'YES'
@@ -465,7 +465,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: e777234570e74d4b8832dca84073f439
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.submission.check)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.tls.submission.check)=0
         name: 'Mailcow: SMTP submission not reachable'
         priority: HIGH
         manual_close: 'YES'
@@ -489,7 +489,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: 3b5cc9d346274ce88a32b9579dafc74f
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.imaps.check)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.tls.imaps.check)=0
         name: 'Mailcow: IMAPS not reachable'
         priority: HIGH
         manual_close: 'YES'
@@ -513,7 +513,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: 48030a12075b48a288ed825ce69a08a0
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.ui.check)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.ui.check)=0
         name: 'Mailcow: Web UI not accessible'
         priority: HIGH
         manual_close: 'YES'
@@ -536,7 +536,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 91c96995900040a686f6b3d6979d2b68
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.tls.cert.days.443)<{$MAILCOW.CERT.WARN}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.tls.cert.days.443)<{$MAILCOW.CERT.WARN}
         name: 'Mailcow: TLS certificate expires soon (443)'
         priority: HIGH
         manual_close: 'YES'
@@ -627,9 +627,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 57372933d4cd4dd88ce39f5d481c03e2
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.security.fail2ban.banned)>20
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.security.fail2ban.banned)>20
         name: 'Mailcow: High number of banned IPs'
-        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.security.fail2ban.banned)<10
+        recovery_expression: last(/Mailcow by Zabbix agent 2/mailcow.security.fail2ban.banned)<10
         priority: WARNING
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
@@ -691,13 +691,13 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 6e43aecadbf5478286fcec82efb716bc
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.security.rbl.listed)>={$MAILCOW.RBL.CRITICAL}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.security.rbl.listed)>={$MAILCOW.RBL.CRIT}
         name: 'Mailcow: IP listed on RBL'
         priority: HIGH
         manual_close: 'YES'
         description: 'Mail server IP is listed on RBL blacklist(s)! Check: mxtoolbox.com/blacklists'
-        opdata: '{ITEM.LASTVALUE1} list(s): {?last(/mailcow_complete_monitoring_v45/mailcow.security.rbl.detail)}'
-        event_name: 'Mailcow: IP listed on {$MAILCOW.RBL.CRITICAL} or more RBLs'
+        opdata: '{ITEM.LASTVALUE1} list(s): {?last(/Mailcow by Zabbix agent 2/mailcow.security.rbl.detail)}'
+        event_name: 'Mailcow: IP listed on {$MAILCOW.RBL.CRIT} or more RBLs'
         tags:
         - tag: scope
           value: security
@@ -732,7 +732,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 00ae22db91794cf98b74cab77dfb3dc6
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.security.open.relay)=1
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.security.open.relay)=1
         name: 'Mailcow: OPEN RELAY DETECTED'
         priority: HIGH
         manual_close: 'YES'
@@ -819,7 +819,7 @@ zabbix_export:
       description: 'Score 0-7: SPF+DKIM+DMARC+DANE+MTA-STS+TLS-RPT+BIMI'
       triggers:
       - uuid: 6ecfa026caa74c90958dcc5c1d6e2d90
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.security.audit.score)<3
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.security.audit.score)<3
         name: 'Mailcow: Security audit score critically low'
         priority: HIGH
         description: Less than 3/7 mail security standards configured (SPF+DKIM+DMARC+DANE+MTA-STS+TLS-RPT+BIMI)
@@ -859,7 +859,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: c1575188d4a246ed898d13f51e05eac4
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.spf.exists)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.dns.spf.exists)=0
         name: 'Mailcow: SPF record missing for one or more domains'
         priority: HIGH
         manual_close: 'YES'
@@ -884,7 +884,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: 02e855300eaf40f282cff5c28d4f29a1
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.dkim.exists)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.dns.dkim.exists)=0
         name: 'Mailcow: DKIM record missing for one or more domains'
         priority: HIGH
         manual_close: 'YES'
@@ -909,7 +909,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: 8a4d9f32ed4d42c28c2d4ac5fd12493c
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.dmarc.exists)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.dns.dmarc.exists)=0
         name: 'Mailcow: DMARC record missing for one or more domains'
         priority: HIGH
         manual_close: 'YES'
@@ -933,7 +933,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: be366ad7a14443788eeb312c20016e20
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.dns.ptr.valid)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.dns.ptr.valid)=0
         name: 'Mailcow: PTR record invalid'
         priority: HIGH
         manual_close: 'YES'
@@ -1010,9 +1010,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 4b5bea9e48564a3a83946b664b879c08
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.root.used)>{$MAILCOW.DISK.WARN}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.disk.root.used)>{$MAILCOW.DISK.WARN}
         name: 'Mailcow: Root disk usage is too high'
-        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.root.used)<{$MAILCOW.DISK.RECOVER}
+        recovery_expression: last(/Mailcow by Zabbix agent 2/mailcow.disk.root.used)<{$MAILCOW.DISK.RECOVER}
         priority: HIGH
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
@@ -1062,9 +1062,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 3a460af09c7d47de89d99269584e6450
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.docker.used)>{$MAILCOW.DISK.WARN}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.disk.docker.used)>{$MAILCOW.DISK.WARN}
         name: 'Mailcow: Docker disk usage is too high'
-        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.docker.used)<{$MAILCOW.DISK.RECOVER}
+        recovery_expression: last(/Mailcow by Zabbix agent 2/mailcow.disk.docker.used)<{$MAILCOW.DISK.RECOVER}
         priority: HIGH
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
@@ -1114,9 +1114,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 5d20c9017f5b43358c71158acf5ae1f7
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.log.used)>{$MAILCOW.DISK.WARN}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.disk.log.used)>{$MAILCOW.DISK.WARN}
         name: 'Mailcow: Log disk usage is too high'
-        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.log.used)<{$MAILCOW.DISK.RECOVER}
+        recovery_expression: last(/Mailcow by Zabbix agent 2/mailcow.disk.log.used)<{$MAILCOW.DISK.RECOVER}
         priority: WARNING
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
@@ -1194,9 +1194,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 3b628bf186d54caf88fc693148eee6c2
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.vmail.used)>{$MAILCOW.DISK.VMAIL.WARN}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.disk.vmail.used)>{$MAILCOW.DISK.VMAIL.WARN}
         name: 'Mailcow: Mail storage usage is too high'
-        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.disk.vmail.used)<{$MAILCOW.DISK.VMAIL.RECOVER}
+        recovery_expression: last(/Mailcow by Zabbix agent 2/mailcow.disk.vmail.used)<{$MAILCOW.DISK.VMAIL.RECOVER}
         priority: HIGH
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
@@ -1300,7 +1300,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: ba561045e51144f980528a568a671266
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.updates.available)=1
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.updates.available)=1
         name: 'Mailcow: Update available'
         priority: INFO
         manual_close: 'YES'
@@ -1322,7 +1322,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: c18ad202158247c18835b9822a904bb0
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.updates.commits.behind)>20
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.updates.commits.behind)>20
         name: 'Mailcow: Mailcow update available'
         priority: WARNING
         manual_close: 'YES'
@@ -1401,7 +1401,7 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: 795f4b2ed82f4c918124192a781d6ef7
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.rspamd.running)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.rspamd.running)=0
         name: 'Mailcow: Rspamd not running'
         priority: HIGH
         manual_close: 'YES'
@@ -1557,7 +1557,7 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: 133060ef38eb411286c11b36e560c062
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.dovecot.running)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.dovecot.running)=0
         name: 'Mailcow: Dovecot not running'
         priority: HIGH
         manual_close: 'YES'
@@ -1644,7 +1644,7 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: f048f61386ae4b8e8420665890bb60ba
-        expression: sum(/mailcow_complete_monitoring_v45/mailcow.dovecot.imap.errors,1h)>10
+        expression: sum(/Mailcow by Zabbix agent 2/mailcow.dovecot.imap.errors,1h)>10
         name: 'Mailcow: Dovecot IMAP errors'
         priority: WARNING
         manual_close: 'YES'
@@ -1693,9 +1693,9 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 8eef9ebbfcd741388c8fa7c7c0dd1808
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.age)>48
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.backup.age)>48
         name: 'Mailcow: Backup older than 48h'
-        recovery_expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.age)<24
+        recovery_expression: last(/Mailcow by Zabbix agent 2/mailcow.backup.age)<24
         priority: HIGH
         manual_close: 'YES'
         recovery_mode: RECOVERY_EXPRESSION
@@ -1745,7 +1745,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 3347ca2e44ad45ec8197fc1fc9fcedf9
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.disk.free)<10
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.backup.disk.free)<10
         name: 'Mailcow: Backup disk low (<10% free)'
         priority: HIGH
         manual_close: 'YES'
@@ -1769,7 +1769,7 @@ zabbix_export:
         name: Mailcow Boolean
       triggers:
       - uuid: a5621bc4a1d743c08ba22fca34e17c7f
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.dir.exists)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.backup.dir.exists)=0
         name: 'Mailcow: Backup directory missing'
         priority: HIGH
         manual_close: 'YES'
@@ -1808,7 +1808,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 501d57d5d2594bdb8bb3e868e2e8e4e2
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.backup.zero.files)>0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.backup.zero.files)>0
         name: 'Mailcow: Backup contains empty files'
         priority: WARNING
         manual_close: 'YES'
@@ -1872,7 +1872,7 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: bcc980302d96486687c0a86438bfa928
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.failed)>0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.sync.jobs.failed)>0
         name: 'Mailcow: Sync jobs failed'
         priority: WARNING
         manual_close: 'YES'
@@ -1894,7 +1894,7 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: fae389f1dafc4a1985165a00e85cdf3b
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.never_run)>0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.sync.jobs.never_run)>0
         name: 'Mailcow: Sync jobs never executed'
         priority: INFO
         manual_close: 'YES'
@@ -1917,7 +1917,7 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 6a4e18f1d3bc49a883aebbc90d42956e
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.oldest_run)>48
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.sync.jobs.oldest_run)>48
         name: 'Mailcow: Sync job not run for >48h'
         priority: WARNING
         manual_close: 'YES'
@@ -1939,7 +1939,7 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 8cd85d61cb404bbc8abdc385a8525470
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.sync.jobs.stuck)>0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.sync.jobs.stuck)>0
         name: 'Mailcow: Sync job stuck'
         priority: HIGH
         manual_close: 'YES'
@@ -2002,7 +2002,7 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 2e75007d25724b8181cc67a50dd55026
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.over.quota)>0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mailbox.over.quota)>0
         name: 'Mailcow: Mailboxes over 80% quota'
         priority: WARNING
         manual_close: 'YES'
@@ -2106,7 +2106,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: e29030541ca640c1b86c1a95c118800a
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.received)>5*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w)>5
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.received)>5*trendavg(/Mailcow by Zabbix agent 2/mailcow.mail.received,1w:now-1w) and trendavg(/Mailcow by Zabbix agent 2/mailcow.mail.received,1w:now-1w)>5
         name: 'Mailcow: Mail volume spike'
         priority: WARNING
         description: Eingehende Mails sind mehr als 5x höher als der Wochendurchschnitt. Mögliche Spam-Welle oder ungewöhnlicher Maileingang.
@@ -2116,7 +2116,7 @@ zabbix_export:
           value: performance
         opdata: '{ITEM.LASTVALUE1} received/h (>5x weekly baseline)'
       - uuid: fb6e0ea6f994432b9c6bc21f3073f552
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.received)<0.2*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.received,1w:now-1w)>10
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.received)<0.2*trendavg(/Mailcow by Zabbix agent 2/mailcow.mail.received,1w:now-1w) and trendavg(/Mailcow by Zabbix agent 2/mailcow.mail.received,1w:now-1w)>10
         name: 'Mailcow: Mail volume drop'
         priority: HIGH
         description: 'Eingehende Mails sind unter 20% des Wochendurchschnitts. Mögliche Ursachen: DNS/MX-Problem, Netzwerk, Firewall.'
@@ -2166,7 +2166,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: b79fabf4c4e74fc08fbb509c587bd353
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.deferred)>10
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.deferred)>10
         name: 'Mailcow: Deferred mails'
         priority: WARNING
         manual_close: 'YES'
@@ -2175,7 +2175,7 @@ zabbix_export:
         - tag: scope
           value: performance
       - uuid: 3470837c65eb42f1914e1774673be673
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.deferred)>5*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.deferred,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.deferred,1w:now-1w)>3
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.deferred)>5*trendavg(/Mailcow by Zabbix agent 2/mailcow.mail.deferred,1w:now-1w) and trendavg(/Mailcow by Zabbix agent 2/mailcow.mail.deferred,1w:now-1w)>3
         name: 'Mailcow: Deferred mail spike'
         priority: WARNING
         description: Deferred Mails sind mehr als 5x höher als der Wochendurchschnitt. Mögliches Zustellproblem bei Empfänger-Servern.
@@ -2186,7 +2186,7 @@ zabbix_export:
         opdata: '{ITEM.LASTVALUE1} deferred/h (>5x weekly baseline)'
         dependencies:
         - name: 'Mailcow: Deferred mails'
-          expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.deferred)>10
+          expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.deferred)>10
     - uuid: 621052d67dd041248f79d641065fd307
       name: 'Mailcow: Mails bounced (1h)'
       type: ZABBIX_ACTIVE
@@ -2202,7 +2202,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: d6fe0a0d45924b318e0b1fe670a12760
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.bounced)>50
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.bounced)>50
         name: 'Mailcow: Bounced mails'
         priority: HIGH
         manual_close: 'YES'
@@ -2211,7 +2211,7 @@ zabbix_export:
         - tag: scope
           value: performance
       - uuid: 257dfed4443a46cab7840f2746404076
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.bounced)>5*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.bounced,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.bounced,1w:now-1w)>3
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.bounced)>5*trendavg(/Mailcow by Zabbix agent 2/mailcow.mail.bounced,1w:now-1w) and trendavg(/Mailcow by Zabbix agent 2/mailcow.mail.bounced,1w:now-1w)>3
         name: 'Mailcow: Bounce spike'
         priority: WARNING
         description: Bounces sind mehr als 5x höher als der Wochendurchschnitt. Möglicher Backscatter oder Adresslisten-Problem.
@@ -2222,7 +2222,7 @@ zabbix_export:
         opdata: '{ITEM.LASTVALUE1} bounced/h (>5x weekly baseline)'
         dependencies:
         - name: 'Mailcow: Bounced mails'
-          expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.bounced)>50
+          expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.bounced)>50
     - uuid: 4e00175095ee48998e5dceb57401eaad
       name: 'Mailcow: Mails rejected (1h)'
       type: ZABBIX_ACTIVE
@@ -2238,7 +2238,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: b24dfacfa41642a3b359dd8dd5c21e75
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.rejected)>10*trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.rejected,1w:now-1w) and trendavg(/mailcow_complete_monitoring_v45/mailcow.mail.rejected,1w:now-1w)>3
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.rejected)>10*trendavg(/Mailcow by Zabbix agent 2/mailcow.mail.rejected,1w:now-1w) and trendavg(/Mailcow by Zabbix agent 2/mailcow.mail.rejected,1w:now-1w)>3
         name: 'Mailcow: Reject spike'
         priority: WARNING
         description: Abgelehnte Mails sind mehr als 10x höher als der Wochendurchschnitt. Möglicher Brute-Force oder Spam-Angriff.
@@ -2263,7 +2263,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 91bb01008bd14de0800ad88947ac0d7f
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.reject.rate)>80
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.reject.rate)>80
         name: 'Mailcow: Mail reject rate too high'
         priority: WARNING
         manual_close: 'YES'
@@ -2509,7 +2509,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: c43ffc5c2a01427b86c6f6de4a5822a7
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mail.warnings.sasl)>100
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mail.warnings.sasl)>100
         name: 'Mailcow: High number of SASL warnings'
         priority: WARNING
         manual_close: 'YES'
@@ -2573,7 +2573,7 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: 7e422b40d89c402f871b9c1db8e57143
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.running)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.clamav.running)=0
         name: 'Mailcow: ClamAV not running'
         priority: HIGH
         manual_close: 'YES'
@@ -2637,7 +2637,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 7f52a5003d73482884356f9322c42cda
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.daily.age)>7
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.clamav.daily.age)>7
         name: 'Mailcow: ClamAV definitions outdated'
         priority: WARNING
         manual_close: 'YES'
@@ -2647,9 +2647,9 @@ zabbix_export:
           value: security
         dependencies:
         - name: 'Mailcow: ClamAV definitions critically outdated'
-          expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.daily.age)>30
+          expression: last(/Mailcow by Zabbix agent 2/mailcow.clamav.daily.age)>30
       - uuid: fc71eccc62a948de8a39df84608755c1
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.clamav.daily.age)>30
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.clamav.daily.age)>30
         name: 'Mailcow: ClamAV definitions critically outdated'
         priority: HIGH
         manual_close: 'YES'
@@ -2713,7 +2713,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: a138f73968ee4e9a88575d2fa285c634
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)<100 and last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)>=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.watchdog.overall)<100 and last(/Mailcow by Zabbix agent 2/mailcow.watchdog.overall)>=0
         name: 'Mailcow: Watchdog health degraded'
         priority: WARNING
         manual_close: 'YES'
@@ -2723,9 +2723,9 @@ zabbix_export:
           value: availability
         dependencies:
         - name: 'Mailcow: Watchdog health critical'
-          expression: last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)<50 and last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)>=0
+          expression: last(/Mailcow by Zabbix agent 2/mailcow.watchdog.overall)<50 and last(/Mailcow by Zabbix agent 2/mailcow.watchdog.overall)>=0
       - uuid: f1d47cc59615426f891aa8335d8a802d
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)<50 and last(/mailcow_complete_monitoring_v45/mailcow.watchdog.overall)>=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.watchdog.overall)<50 and last(/Mailcow by Zabbix agent 2/mailcow.watchdog.overall)>=0
         name: 'Mailcow: Watchdog health critical'
         priority: HIGH
         manual_close: 'YES'
@@ -3052,7 +3052,7 @@ zabbix_export:
       description: Gesamtanzahl gelernter Nachrichten (Ham + Spam)
       triggers:
       - uuid: b1602febcca4424799fb52115562a52d
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.rspamd.bayes.total.learned)<200 and last(/mailcow_complete_monitoring_v45/mailcow.rspamd.uptime)>86400
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.rspamd.bayes.total.learned)<200 and last(/Mailcow by Zabbix agent 2/mailcow.rspamd.uptime)>86400
         name: 'Mailcow: Bayes filter poorly trained'
         priority: INFO
         description: Der Bayes-Filter hat weniger als 200 Nachrichten gelernt. Rspamd empfiehlt mindestens 200 Ham + 200 Spam für zuverlässige Erkennung.
@@ -3172,7 +3172,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 9347ce7c87b54e018d0d1b234094d579
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<{$MAILCOW.CERT.WARN}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.acme.cert.days.left)<{$MAILCOW.CERT.WARN}
         name: 'Mailcow: ACME certificate expires soon'
         priority: WARNING
         manual_close: 'YES'
@@ -3183,9 +3183,9 @@ zabbix_export:
           value: security
         dependencies:
         - name: 'Mailcow: ACME certificate expiry critical'
-          expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<{$MAILCOW.CERT.CRIT}
+          expression: last(/Mailcow by Zabbix agent 2/mailcow.acme.cert.days.left)<{$MAILCOW.CERT.CRIT}
       - uuid: 4611e7f01a0c4d1585dbae10f0f1e644
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.acme.cert.days.left)<{$MAILCOW.CERT.CRIT}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.acme.cert.days.left)<{$MAILCOW.CERT.CRIT}
         name: 'Mailcow: ACME certificate expiry critical'
         priority: HIGH
         manual_close: 'YES'
@@ -3290,7 +3290,7 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: 18382ad376e54d0086b3f91ccbc4dc50
-        expression: last(/mailcow_complete_monitoring_v45/zabbix.agent.running)=0
+        expression: last(/Mailcow by Zabbix agent 2/zabbix.agent.running)=0
         name: 'Mailcow: Zabbix agent not running'
         priority: HIGH
         manual_close: 'YES'
@@ -3352,7 +3352,7 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 0a74ad30b8cf4395847f4b79b61eb76d
-        expression: last(/mailcow_complete_monitoring_v45/zabbix.agent.log.errors)>5
+        expression: last(/Mailcow by Zabbix agent 2/zabbix.agent.log.errors)>5
         name: 'Mailcow: Zabbix agent errors'
         priority: WARNING
         manual_close: 'YES'
@@ -3416,7 +3416,7 @@ zabbix_export:
         name: Mailcow Service State
       triggers:
       - uuid: ec6256db740645488f60abf47da836a3
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.collector.running)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.collector.running)=0
         name: 'Mailcow: Collector service down'
         priority: HIGH
         manual_close: 'YES'
@@ -3441,7 +3441,7 @@ zabbix_export:
       units: s
       triggers:
       - uuid: 0cb2dfaa799f4cd78d34d83a06dd5078
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.collector.age)>300
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.collector.age)>300
         name: 'Mailcow: Collector data stale (>5min)'
         priority: WARNING
         manual_close: 'YES'
@@ -3514,7 +3514,7 @@ zabbix_export:
       trends: 90d
       triggers:
       - uuid: 7e27273f1dbf431083034b2f2940746e
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.db.reachable)=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.db.reachable)=0
         name: 'Mailcow: Database not reachable'
         opdata: all database metrics are 0 while this is set
         priority: HIGH
@@ -3542,7 +3542,7 @@ zabbix_export:
       description: Anzahl fehlgeschlagener Collector-Module
       triggers:
       - uuid: 35c5a0efe9c54accbe541a9f78ecaffa
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.collector.errors)>0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.collector.errors)>0
         name: 'Mailcow: Collector module errors detected'
         priority: WARNING
         description: Mindestens ein Collector-Modul hat einen Fehler gemeldet
@@ -3616,7 +3616,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: de38ce34065a4ca08e494012d26d0f53
-        expression: change(/mailcow_complete_monitoring_v45/mailcow.docker.restarts.total)>5
+        expression: change(/Mailcow by Zabbix agent 2/mailcow.docker.restarts.total)>5
         name: 'Mailcow: Docker restart count high'
         priority: WARNING
         manual_close: 'YES'
@@ -3748,7 +3748,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 35f7a9809f59402581ec09a1f0a238ee
-        expression: min(/mailcow_complete_monitoring_v45/mailcow.sogo.memcached.evictions,1h)>0 and change(/mailcow_complete_monitoring_v45/mailcow.sogo.memcached.evictions)>50
+        expression: min(/Mailcow by Zabbix agent 2/mailcow.sogo.memcached.evictions,1h)>0 and change(/Mailcow by Zabbix agent 2/mailcow.sogo.memcached.evictions)>50
         name: 'Mailcow: SOGo Memcached cache pressure (>50 evictions/5m)'
         priority: WARNING
         manual_close: 'YES'
@@ -3784,7 +3784,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 7a1db2c7d98e460d8448e0e5e31baa7d
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.quarantine.total)>100
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.quarantine.total)>100
         name: 'Mailcow: Many mails in quarantine'
         priority: WARNING
         manual_close: 'YES'
@@ -3820,7 +3820,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: a957c5327afa422985909ef977ab3f66
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.quarantine.virus)>0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.quarantine.virus)>0
         name: 'Mailcow: Virus mails in quarantine'
         priority: WARNING
         manual_close: 'YES'
@@ -3884,7 +3884,7 @@ zabbix_export:
       trends: 365d
       triggers:
       - uuid: 68f62e2c64af45e381fa8a111b8487ec
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.queue.deferred)>10
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.queue.deferred)>10
         name: 'Mailcow: Deferred mails in queue'
         priority: WARNING
         manual_close: 'YES'
@@ -3934,7 +3934,7 @@ zabbix_export:
       units: h
       triggers:
       - uuid: d7fc204d558d49a38776dcd12bdff538
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.queue.age.oldest.hours)>24
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.queue.age.oldest.hours)>24
         name: 'Mailcow: Deferred mail stuck in queue'
         priority: HIGH
         manual_close: 'YES'
@@ -4064,7 +4064,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.pfmailq
           - type: STRING
             name: ds.0.color.0
@@ -4072,7 +4072,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.connections
           - type: STRING
             name: ds.0.color.1
@@ -4099,7 +4099,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.log.sasl.auth.failed
           - type: STRING
             name: ds.0.color.0
@@ -4107,7 +4107,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.log.relay.denied
           - type: STRING
             name: ds.0.color.1
@@ -4115,7 +4115,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.log.rbl.reject
           - type: STRING
             name: ds.0.color.2
@@ -4123,7 +4123,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.3
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.log.tls.failed
           - type: STRING
             name: ds.0.color.3
@@ -4150,7 +4150,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.log.errors
           - type: STRING
             name: ds.0.color.0
@@ -4158,7 +4158,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.log.warnings
           - type: STRING
             name: ds.0.color.1
@@ -4166,7 +4166,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.log.quota.exceeded
           - type: STRING
             name: ds.0.color.2
@@ -4174,7 +4174,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.3
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.log.spam.rejected
           - type: STRING
             name: ds.0.color.3
@@ -4205,7 +4205,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.tls.cert.days.443
           - type: STRING
             name: ds.0.color.0
@@ -4213,7 +4213,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.tls.cert.days.587
           - type: STRING
             name: ds.0.color.1
@@ -4221,7 +4221,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.tls.cert.days.993
           - type: STRING
             name: ds.0.color.2
@@ -4252,7 +4252,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.security.fail2ban.banned
           - type: STRING
             name: ds.0.color.0
@@ -4279,7 +4279,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.security.rbl.listed
           - type: STRING
             name: ds.0.color.0
@@ -4310,7 +4310,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.rspamd.ham
           - type: STRING
             name: ds.0.color.0
@@ -4318,7 +4318,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.rspamd.spam
           - type: STRING
             name: ds.0.color.1
@@ -4326,7 +4326,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.rspamd.greylist
           - type: STRING
             name: ds.0.color.2
@@ -4334,7 +4334,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.3
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.rspamd.soft_reject
           - type: STRING
             name: ds.0.color.3
@@ -4361,7 +4361,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.rspamd.spam.rate
           - type: STRING
             name: ds.0.color.0
@@ -4388,7 +4388,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.rspamd.scanned
           - type: STRING
             name: ds.0.color.0
@@ -4396,7 +4396,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.rspamd.learned
           - type: STRING
             name: ds.0.color.1
@@ -4423,7 +4423,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.rspamd.bayes.ham.learned
           - type: STRING
             name: ds.0.color.0
@@ -4431,7 +4431,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.rspamd.bayes.spam.learned
           - type: STRING
             name: ds.0.color.1
@@ -4462,7 +4462,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.dovecot.connections
           - type: STRING
             name: ds.0.color.0
@@ -4489,7 +4489,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.dovecot.imap.login.failed
           - type: STRING
             name: ds.0.color.0
@@ -4497,7 +4497,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.dovecot.pop3.login.failed
           - type: STRING
             name: ds.0.color.1
@@ -4505,7 +4505,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.dovecot.imap.errors
           - type: STRING
             name: ds.0.color.2
@@ -4536,7 +4536,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.disk.root.used
           - type: STRING
             name: ds.0.color.0
@@ -4544,7 +4544,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.disk.docker.used
           - type: STRING
             name: ds.0.color.1
@@ -4552,7 +4552,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.disk.vmail.used
           - type: STRING
             name: ds.0.color.2
@@ -4560,7 +4560,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.3
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.disk.log.used
           - type: STRING
             name: ds.0.color.3
@@ -4587,7 +4587,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.disk.vmail.maildir.size
           - type: STRING
             name: ds.0.color.0
@@ -4618,7 +4618,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.backup.age
           - type: STRING
             name: ds.0.color.0
@@ -4626,7 +4626,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.backup.count
           - type: STRING
             name: ds.0.color.1
@@ -4653,7 +4653,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.backup.size
           - type: STRING
             name: ds.0.color.0
@@ -4661,7 +4661,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.backup.disk.free
           - type: STRING
             name: ds.0.color.1
@@ -4692,7 +4692,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.sync.jobs.active
           - type: STRING
             name: ds.0.color.0
@@ -4700,7 +4700,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.sync.jobs.running
           - type: STRING
             name: ds.0.color.1
@@ -4708,7 +4708,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.sync.jobs.failed
           - type: STRING
             name: ds.0.color.2
@@ -4716,7 +4716,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.3
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.sync.jobs.stuck
           - type: STRING
             name: ds.0.color.3
@@ -4747,7 +4747,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mailbox.total
           - type: STRING
             name: ds.0.color.0
@@ -4755,7 +4755,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mailbox.active
           - type: STRING
             name: ds.0.color.1
@@ -4763,7 +4763,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mailbox.unlimited
           - type: STRING
             name: ds.0.color.2
@@ -4790,7 +4790,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mailbox.quota.used.total
           - type: STRING
             name: ds.0.color.0
@@ -4798,7 +4798,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mailbox.over.quota
           - type: STRING
             name: ds.0.color.1
@@ -4829,7 +4829,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.received
           - type: STRING
             name: ds.0.color.0
@@ -4837,7 +4837,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.delivered
           - type: STRING
             name: ds.0.color.1
@@ -4845,7 +4845,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.bounced
           - type: STRING
             name: ds.0.color.2
@@ -4853,7 +4853,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.3
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.rejected
           - type: STRING
             name: ds.0.color.3
@@ -4880,7 +4880,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.reject.rbl
           - type: STRING
             name: ds.0.color.0
@@ -4888,7 +4888,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.reject.unknown.user
           - type: STRING
             name: ds.0.color.1
@@ -4896,7 +4896,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.reject.cleanup
           - type: STRING
             name: ds.0.color.2
@@ -4904,7 +4904,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.3
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.reject.domain.notfound
           - type: STRING
             name: ds.0.color.3
@@ -4931,7 +4931,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.bytes.received
           - type: STRING
             name: ds.0.color.0
@@ -4939,7 +4939,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.bytes.delivered
           - type: STRING
             name: ds.0.color.1
@@ -4966,7 +4966,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.warnings.sasl
           - type: STRING
             name: ds.0.color.0
@@ -4974,7 +4974,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.warnings.tls
           - type: STRING
             name: ds.0.color.1
@@ -4982,7 +4982,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.mail.warnings.postscreen
           - type: STRING
             name: ds.0.color.2
@@ -5013,7 +5013,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.clamav.daily.age
           - type: STRING
             name: ds.0.color.0
@@ -5040,7 +5040,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.clamav.signatures
           - type: STRING
             name: ds.0.color.0
@@ -5048,7 +5048,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.clamav.db.size
           - type: STRING
             name: ds.0.color.1
@@ -5079,7 +5079,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.watchdog.overall
           - type: STRING
             name: ds.0.color.0
@@ -5106,7 +5106,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.watchdog.postfix
           - type: STRING
             name: ds.0.color.0
@@ -5114,7 +5114,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.watchdog.dovecot
           - type: STRING
             name: ds.0.color.1
@@ -5122,7 +5122,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.watchdog.rspamd
           - type: STRING
             name: ds.0.color.2
@@ -5130,7 +5130,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.3
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.watchdog.mysql
           - type: STRING
             name: ds.0.color.3
@@ -5157,7 +5157,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.watchdog.nginx
           - type: STRING
             name: ds.0.color.0
@@ -5165,7 +5165,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.watchdog.sogo
           - type: STRING
             name: ds.0.color.1
@@ -5173,7 +5173,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.watchdog.redis
           - type: STRING
             name: ds.0.color.2
@@ -5181,7 +5181,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.3
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.watchdog.unbound
           - type: STRING
             name: ds.0.color.3
@@ -5208,7 +5208,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.watchdog.unhealthy
           - type: STRING
             name: ds.0.color.0
@@ -5239,7 +5239,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.acme.cert.days.left
           - type: STRING
             name: ds.0.color.0
@@ -5270,7 +5270,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.docker.cpu.total
           - type: STRING
             name: ds.0.color.0
@@ -5297,7 +5297,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.docker.mem.total.mb
           - type: STRING
             name: ds.0.color.0
@@ -5324,7 +5324,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.docker.restarts.total
           - type: STRING
             name: ds.0.color.0
@@ -5351,7 +5351,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.docker.total
           - type: STRING
             name: ds.0.color.0
@@ -5382,7 +5382,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.sogo.memcached.hit.rate
           - type: STRING
             name: ds.0.color.0
@@ -5409,7 +5409,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.sogo.memcached.items
           - type: STRING
             name: ds.0.color.0
@@ -5436,7 +5436,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.sogo.memcached.hits
           - type: STRING
             name: ds.0.color.0
@@ -5444,7 +5444,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.sogo.memcached.misses
           - type: STRING
             name: ds.0.color.1
@@ -5471,7 +5471,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.sogo.memcached.bytes
           - type: STRING
             name: ds.0.color.0
@@ -5502,7 +5502,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.quarantine.total
           - type: STRING
             name: ds.0.color.0
@@ -5510,7 +5510,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.quarantine.spam
           - type: STRING
             name: ds.0.color.1
@@ -5518,7 +5518,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.quarantine.virus
           - type: STRING
             name: ds.0.color.2
@@ -5545,7 +5545,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.queue.deferred
           - type: STRING
             name: ds.0.color.0
@@ -5553,7 +5553,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.queue.active
           - type: STRING
             name: ds.0.color.1
@@ -5561,7 +5561,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.queue.hold
           - type: STRING
             name: ds.0.color.2
@@ -5588,7 +5588,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.queue.age.oldest.hours
           - type: STRING
             name: ds.0.color.0
@@ -5619,7 +5619,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.updates.commits.behind
           - type: STRING
             name: ds.0.color.0
@@ -5650,7 +5650,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: zabbix.agent.log.errors
           - type: STRING
             name: ds.0.color.0
@@ -5658,7 +5658,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: zabbix.agent.log.warnings
           - type: STRING
             name: ds.0.color.1
@@ -5685,7 +5685,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: mailcow.collector.age
           - type: STRING
             name: ds.0.color.0
@@ -5716,7 +5716,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.postscreen.connect
           - type: STRING
             name: ds.0.color.0
@@ -5724,7 +5724,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.postscreen.pass.new
           - type: STRING
             name: ds.0.color.1
@@ -5732,7 +5732,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.postscreen.pass.old
           - type: STRING
             name: ds.0.color.2
@@ -5759,7 +5759,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.0
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.postscreen.reject
           - type: STRING
             name: ds.0.color.0
@@ -5767,7 +5767,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.1
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.postscreen.dnsbl
           - type: STRING
             name: ds.0.color.1
@@ -5775,7 +5775,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.2
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.postscreen.pregreet
           - type: STRING
             name: ds.0.color.2
@@ -5783,7 +5783,7 @@ zabbix_export:
           - type: ITEM
             name: ds.0.itemids.3
             value:
-              host: mailcow_complete_monitoring_v45
+              host: Mailcow by Zabbix agent 2
               key: postfix.postscreen.hangup
           - type: STRING
             name: ds.0.color.3
@@ -5846,7 +5846,7 @@ zabbix_export:
     - macro: '{$MAILCOW.QUOTA.WARN}'
       value: '80'
       description: 'Domain/mailbox quota: warning threshold in percent'
-    - macro: '{$MAILCOW.RBL.CRITICAL}'
+    - macro: '{$MAILCOW.RBL.CRIT}'
       value: '1'
       description: Trigger if listed on this many RBLs or more
     - macro: '{$MAILCOW.SYNCJOB.AGE.MAX}'
@@ -5962,7 +5962,7 @@ zabbix_export:
           value: mailcow
       trigger_prototypes:
       - uuid: a6f4495167f8420f851eef04bd4d3a20
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.domain.usage_pct[{#DOMAIN}])>{$MAILCOW.QUOTA.WARN}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.domain.usage_pct[{#DOMAIN}])>{$MAILCOW.QUOTA.WARN}
         name: 'Mailcow: Domain [{#DOMAIN}] quota usage is high'
         priority: WARNING
         manual_close: 'YES'
@@ -5972,7 +5972,7 @@ zabbix_export:
         - tag: scope
           value: capacity
       - uuid: 6d3459da903f41238c8f2327cf401889
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.domain.usage_pct[{#DOMAIN}])>{$MAILCOW.QUOTA.CRIT}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.domain.usage_pct[{#DOMAIN}])>{$MAILCOW.QUOTA.CRIT}
         name: 'Mailcow: Domain [{#DOMAIN}] quota usage is critical'
         priority: HIGH
         manual_close: 'YES'
@@ -5987,11 +5987,11 @@ zabbix_export:
         graph_items:
         - color: 00AA00
           item:
-            host: mailcow_complete_monitoring_v45
+            host: Mailcow by Zabbix agent 2
             key: mailcow.domain.used_mb[{#DOMAIN}]
         - color: 0000DD
           item:
-            host: mailcow_complete_monitoring_v45
+            host: Mailcow by Zabbix agent 2
             key: mailcow.domain.quota_mb[{#DOMAIN}]
     - uuid: 37c28f99abfd45ae80e519ec47e720be
       name: 'Mailcow: Mailbox Discovery'
@@ -6083,7 +6083,7 @@ zabbix_export:
           value: mailcow
       trigger_prototypes:
       - uuid: f568b4d1eb5545868429355514af2062
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.lld.usage_pct[{#MAILBOX}])>{$MAILCOW.QUOTA.WARN}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mailbox.lld.usage_pct[{#MAILBOX}])>{$MAILCOW.QUOTA.WARN}
         name: 'Mailcow: Mailbox [{#MAILBOX}] quota usage is high'
         priority: WARNING
         manual_close: 'YES'
@@ -6093,7 +6093,7 @@ zabbix_export:
         - tag: scope
           value: capacity
       - uuid: 29e82efac2c845558dbd514c5b649fdd
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.mailbox.lld.usage_pct[{#MAILBOX}])>{$MAILCOW.QUOTA.CRIT}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.mailbox.lld.usage_pct[{#MAILBOX}])>{$MAILCOW.QUOTA.CRIT}
         name: 'Mailcow: Mailbox [{#MAILBOX}] quota usage is critical'
         priority: HIGH
         manual_close: 'YES'
@@ -6108,11 +6108,11 @@ zabbix_export:
         graph_items:
         - color: 00AA00
           item:
-            host: mailcow_complete_monitoring_v45
+            host: Mailcow by Zabbix agent 2
             key: mailcow.mailbox.lld.used_mb[{#MAILBOX}]
         - color: 0000DD
           item:
-            host: mailcow_complete_monitoring_v45
+            host: Mailcow by Zabbix agent 2
             key: mailcow.mailbox.lld.quota_mb[{#MAILBOX}]
     - uuid: f4e22dc2b9b442f98409d3c9baacfb39
       name: 'Mailcow: Sync Job Discovery'
@@ -6223,7 +6223,7 @@ zabbix_export:
           value: mailcow
       trigger_prototypes:
       - uuid: 084f8113fa964f7b825933a632d5e3fb
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.syncjob.success[{#SYNCJOB_ID}])=0
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.syncjob.success[{#SYNCJOB_ID}])=0
         name: 'Mailcow: Syncjob [{#SYNCJOB_USER}] failed'
         priority: HIGH
         manual_close: 'YES'
@@ -6231,7 +6231,7 @@ zabbix_export:
         - tag: scope
           value: notice
       - uuid: 85ee8a56fcc64ba089c6d7fccdf08726
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.syncjob.age_hours[{#SYNCJOB_ID}])>{$MAILCOW.SYNCJOB.AGE.MAX}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.syncjob.age_hours[{#SYNCJOB_ID}])>{$MAILCOW.SYNCJOB.AGE.MAX}
         name: 'Mailcow: Syncjob [{#SYNCJOB_USER}] has not run recently'
         priority: WARNING
         manual_close: 'YES'
@@ -6388,7 +6388,7 @@ zabbix_export:
           value: mailcow
       trigger_prototypes:
       - uuid: 178b4dfa701047a98993b316ce35eb1e
-        expression: change(/mailcow_complete_monitoring_v45/mailcow.docker.restarts[{#CONTAINER}])>0
+        expression: change(/Mailcow by Zabbix agent 2/mailcow.docker.restarts[{#CONTAINER}])>0
         name: 'Mailcow: Container [{#CONTAINER}] has been restarted'
         priority: INFO
         manual_close: 'YES'
@@ -6396,7 +6396,7 @@ zabbix_export:
         - tag: scope
           value: notice
       - uuid: 415b930006d541f88ecf17f2bb176a5b
-        expression: last(/mailcow_complete_monitoring_v45/mailcow.docker.mem_pct[{#CONTAINER}])>{$MAILCOW.CONTAINER.MEM.MAX}
+        expression: last(/Mailcow by Zabbix agent 2/mailcow.docker.mem_pct[{#CONTAINER}])>{$MAILCOW.CONTAINER.MEM.MAX}
         name: 'Mailcow: Container [{#CONTAINER}] memory usage is high'
         priority: WARNING
         manual_close: 'YES'
@@ -6411,18 +6411,18 @@ zabbix_export:
         graph_items:
         - color: 0000DD
           item:
-            host: mailcow_complete_monitoring_v45
+            host: Mailcow by Zabbix agent 2
             key: mailcow.docker.cpu[{#CONTAINER}]
         - color: DD0000
           item:
-            host: mailcow_complete_monitoring_v45
+            host: Mailcow by Zabbix agent 2
             key: mailcow.docker.mem_pct[{#CONTAINER}]
       - uuid: e87c57fa719e41be8befd631d5f48f05
         name: 'Mailcow: Container [{#CONTAINER}] memory (MB)'
         graph_items:
         - color: 00AA00
           item:
-            host: mailcow_complete_monitoring_v45
+            host: Mailcow by Zabbix agent 2
             key: mailcow.docker.mem_mb[{#CONTAINER}]
     tags:
     - tag: class

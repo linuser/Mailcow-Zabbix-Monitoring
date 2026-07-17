@@ -2,6 +2,51 @@
 
 > Entries from v1.2 onwards are written in English. Earlier entries are in German.
 
+## v1.3.4 (2026-07-16)
+
+### Changed — Zabbix template guideline conformance
+- **Macro `{$MAILCOW.RBL.CRITICAL}` renamed to `{$MAILCOW.RBL.CRIT}`.** The
+  guidelines define `CRIT` as the standard abbreviation for the critical
+  threshold suffix. Updated in all three places — the macro definition, the RBL
+  trigger expression and its `event_name` — so the trigger keeps resolving the
+  macro. (If you overrode `{$MAILCOW.RBL.CRITICAL}` at host level, re-create the
+  override under the new name; the template default is unchanged.)
+
+_With this, the guideline pass A–D is complete: DISASTER→HIGH (v1.3.1), template
+name (v1.3.2), template group (v1.3.3) and the RBL macro abbreviation (v1.3.4)._
+
+## v1.3.3 (2026-07-16)
+
+### Changed — Zabbix template guideline conformance
+- **Template group moved from `Templates/Mailcow` to `Templates/Applications`.**
+  The guidelines require `Templates/<category>`, and Mailcow is an application —
+  `Mailcow` was never a Zabbix category. The `template_groups` entry now carries
+  the **canonical UUID** of the standard "Templates/Applications" group
+  (`a571c0d144b14fd4a87a9d9b2aa9fcd6`, verified against Zabbix's official Docker
+  and Proxmox templates), so on import the template links to the existing standard
+  group by UUID instead of creating a duplicate or colliding on the name.
+
+## v1.3.2 (2026-07-16)
+
+### Changed — Zabbix template guideline conformance
+- **Template renamed, separate visible name dropped.** The technical name
+  `mailcow_complete_monitoring_v45` (the version-like `_v45` suffix isn't allowed
+  by the guidelines) is now **`Mailcow by Zabbix agent 2`** — product plus
+  data-collection method, in the official Zabbix style. The separate visible name
+  ("Mailcow Complete Monitoring v1.0") was dropped — the guidelines suggest leaving
+  it empty, which in the export means the `name` field is set equal to the
+  technical name (Zabbix import rejects an absent/empty `name` with
+  *"/1/name cannot be empty"*, so it can't literally be blank).
+- **All 208 references updated in the same pass** so the import stays consistent:
+  the template header, 77 trigger expressions + 7 recovery expressions + 1 opdata,
+  and 107 dashboard `host:` fields. Verified: no occurrence of the old name
+  remains, every trigger expression still resolves to an existing item, YAML
+  parses.
+- Zabbix matches the template by its **UUID** on import, so the rename applies
+  **in place** to already-linked hosts — links and history are preserved. README,
+  README.de and DOKU were updated to the new name (and the "technical name is
+  stable" note corrected to reference the UUID, since the name now changes).
+
 ## v1.3.1 (2026-07-16)
 
 ### Changed — Zabbix template guideline conformance
