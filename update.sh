@@ -48,10 +48,25 @@ if [ $ROLLBACK -eq 1 ]; then
         exit 1
     fi
     echo "Rollback from: $LAST"
-    cp -a "$LAST"/*.sh "$LAST"/*.py "$BIN_DIR"/ 2>/dev/null
+    RESTORED=0
+    # Scripts: neues Layout ($LAST/bin), altes flaches Layout als Fallback (< v1.3.5)
+    if [ -d "$LAST/bin" ] && ls "$LAST"/bin/* >/dev/null 2>&1; then
+        cp -a "$LAST"/bin/* "$BIN_DIR"/ && RESTORED=1
+    elif ls "$LAST"/*.sh "$LAST"/*.py >/dev/null 2>&1; then
+        cp -a "$LAST"/*.sh "$LAST"/*.py "$BIN_DIR"/ 2>/dev/null && RESTORED=1
+    fi
+    # systemd-Units zuruecknehmen (nur neues Layout hat sie im Backup)
+    if [ -d "$LAST/systemd" ] && ls "$LAST"/systemd/* >/dev/null 2>&1; then
+        cp -a "$LAST"/systemd/* /etc/systemd/system/ && systemctl daemon-reload 2>/dev/null && RESTORED=1
+    fi
     systemctl restart mailcow-monitor.timer 2>/dev/null
-    ok "Scripts restored. Reset the template in the frontend separately if needed."
-    exit 0
+    if [ "$RESTORED" -eq 1 ]; then
+        ok "Restored from $LAST. Reset the template in the frontend separately if needed."
+        exit 0
+    else
+        err "Nothing to restore in $LAST (empty or unknown backup layout)."
+        exit 1
+    fi
 fi
 
 echo "=============================================="
@@ -109,11 +124,17 @@ echo "[3/6] Backup"
 STAMP=$(date +%Y%m%d-%H%M%S)
 BACKUP="$BACKUP_ROOT/$STAMP"
 if [ $CHECK_ONLY -eq 0 ]; then
-    mkdir -p "$BACKUP"
+    mkdir -p "$BACKUP/bin" "$BACKUP/systemd"
     N=0
+    # Scripts unter /usr/local/bin
     for f in "$BIN_DIR"/mailcow-collector.py "$BIN_DIR"/mailcow-reader.sh "$BIN_DIR"/check_*.sh \
-             "$BIN_DIR"/dovecot_check.sh "$BIN_DIR"/postfix_*.sh "$BIN_DIR"/sync_jobs_check.sh; do
-        [ -f "$f" ] && { cp -a "$f" "$BACKUP/"; N=$((N+1)); }
+             "$BIN_DIR"/postfix_*.sh "$BIN_DIR"/sync_jobs_check.sh; do
+        [ -f "$f" ] && { cp -a "$f" "$BACKUP/bin/"; N=$((N+1)); }
+    done
+    # systemd-Units: werden von [4b] ebenfalls ersetzt, muessen also mit ins Backup -
+    # sonst kann --rollback eine kaputte Unit nicht zuruecknehmen.
+    for u in /etc/systemd/system/mailcow-monitor.service /etc/systemd/system/mailcow-monitor.timer; do
+        [ -f "$u" ] && { cp -a "$u" "$BACKUP/systemd/"; N=$((N+1)); }
     done
     ok "$N files backed up -> $BACKUP"
 else

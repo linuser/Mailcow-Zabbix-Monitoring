@@ -2,6 +2,27 @@
 
 > Entries from v1.2 onwards are written in English. Earlier entries are in German.
 
+## v1.3.5 (2026-07-16)
+
+### Fixed — installer / updater robustness (pre-submission hardening)
+- **`install.sh` no longer aborts when the Zabbix agent isn't present.** The final
+  `systemctl restart zabbix-agent2` and the self-test's `zabbix_get` calls ran
+  unguarded under `set -e`; on a host where the agent is absent or named
+  differently, the install died right after the step that carefully *warns*
+  instead of failing. The whole restart + self-test block is now skipped with a
+  clear message when no agent was detected (`AGENT_WARN`), and the restart itself
+  can no longer abort the run.
+- **`update.sh --rollback` is now symmetric.** The backup saved only the
+  `/usr/local/bin` scripts, but the update also replaces the systemd units — so a
+  rollback could not undo a broken unit. Backups now use `bin/` and `systemd/`
+  subfolders (scripts *and* units); `--rollback` restores both (with a fallback
+  for the old flat layout) and reloads systemd, and it **reports honestly** —
+  erroring out instead of printing "restored" when nothing was restored. The
+  stale `dovecot_check.sh` entry was dropped from the backup list.
+- **`uninstall.sh`** pointed users at a wrong backup path (`/root/…`) — corrected
+  to `/var/backups/mailcow-zabbix/` — and named the old template; it now refers to
+  the current template name "Mailcow by Zabbix agent 2".
+
 ## v1.3.4 (2026-07-16)
 
 ### Changed — Zabbix template guideline conformance

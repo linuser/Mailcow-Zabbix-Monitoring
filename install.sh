@@ -224,24 +224,35 @@ echo ""
 echo -e "${BLUE}=== [5/5] Restarting agent + test ===${NC}"
 # ====================================================================
 
-systemctl restart zabbix-agent2
-sleep 3
+# Nur neu starten/testen, wenn ein Zabbix-Agent erkannt wurde. Sonst wuerde
+# 'systemctl restart zabbix-agent2' (bzw. das folgende zabbix_get) unter 'set -e'
+# die ganze Installation abbrechen - obwohl der Collector selbst laeuft.
+if [ "${AGENT_WARN:-0}" = "1" ]; then
+    echo -e "${YELLOW}⚠ Zabbix Agent 2 not detected — skipping restart and self-test.${NC}"
+    echo -e "${YELLOW}  Configure zabbix-agent2, then run: systemctl restart zabbix-agent2${NC}"
+    PASS=0; ERRORS=0
+else
+    systemctl restart zabbix-agent2 2>/dev/null \
+        && echo -e "${GREEN}✓ zabbix-agent2 restarted${NC}" \
+        || echo -e "${YELLOW}⚠ Could not restart zabbix-agent2 — start it manually${NC}"
+    sleep 3
 
-# Quick test
-ERRORS=0
-PASS=0
-for key in postfix.process.running mailcow.rspamd.scanned mailcow.disk.root.used \
-           mailcow.dovecot.running mailcow.version.current \
-           mailcow.mailbox.total mailcow.collector.running; do
-    RESULT=$(zabbix_get -s 127.0.0.1 -k "$key" 2>/dev/null)
-    if [ -n "$RESULT" ] && ! echo "$RESULT" | grep -q "NOTSUPPORTED\|error"; then
-        echo -e "  ${GREEN}✓ $key = $RESULT${NC}"
-        PASS=$((PASS + 1))
-    else
-        echo -e "  ${RED}✗ $key = $RESULT${NC}"
-        ERRORS=$((ERRORS + 1))
-    fi
-done
+    # Quick test
+    ERRORS=0
+    PASS=0
+    for key in postfix.process.running mailcow.rspamd.scanned mailcow.disk.root.used \
+               mailcow.dovecot.running mailcow.version.current \
+               mailcow.mailbox.total mailcow.collector.running; do
+        RESULT=$(zabbix_get -s 127.0.0.1 -k "$key" 2>/dev/null) || RESULT=""
+        if [ -n "$RESULT" ] && ! echo "$RESULT" | grep -q "NOTSUPPORTED\|error"; then
+            echo -e "  ${GREEN}✓ $key = $RESULT${NC}"
+            PASS=$((PASS + 1))
+        else
+            echo -e "  ${RED}✗ $key = $RESULT${NC}"
+            ERRORS=$((ERRORS + 1))
+        fi
+    done
+fi
 
 echo ""
 echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
