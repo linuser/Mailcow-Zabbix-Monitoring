@@ -22,3 +22,6 @@ __pycache__/
 
 # Hinweis: bewusst NICHT ignoriert werden *.json, *.yaml und *.conf –
 # Dashboards, Zabbix-Templates und Agent-Konfigurationen gehören ins Repo.
+*.zip
+community-submission/
+*.zip
